@@ -6,7 +6,7 @@ from util.macros import *
 class Jobs:
 
     def __init__(self, jobid, job_name, submit_time, state, general_state, pending_time, job_remaining_time,
-                 start_time, used_time, cpu_used, gpu_used, memory_used, compute_nodes, user, account_name):
+                 start_time, used_time, cpu_used, gpu_used, memory_used, compute_nodes, account_name):
         """
         the job ID is an integer; from LSF/slurm etc. However for easy handling we just treat it as a string
 
@@ -40,8 +40,7 @@ class Jobs:
         self.cpu_used           =  cpu_used          
         self.gpu_used           =  gpu_used          
         self.memory_used        =  memory_used
-        self.compute_nodes      =  compute_nodes     
-        self.user               =  user               
+        self.compute_nodes      =  compute_nodes
         self.account_name       =  account_name
 
     def __str__(self):
@@ -59,6 +58,6 @@ class Jobs:
                 f"start_time: {self.start_time}\n used_time(minutes): {self.used_time}\n "
                 f"cpu_used: {self.cpu_used}\n gpu_used: {self.gpu_used}\n "
                 f"memory_request(GB): {self.memory_used}\n compute_nodes: {self.compute_nodes}\n "
-                f"user: {self.user}\n account_name: {self.account_name}\n")
+                f"account_name: {self.account_name}\n")
 
 
