@@ -75,7 +75,7 @@ def parse_lshosts_cpu_infor(output, nodelist):
                     mem_value = re.sub(r"\D", "", mem)
                 elif mem.find("T") > 0 or mem.find("t") > 0:
                     val = re.sub(r"\D", "", mem)
-                    v1 = float(val)*1024
+                    v1 = int(float(val)*1024)
                     mem_value = str(v1)
                 else:
                     raise RuntimeError("The input memory value should be in unit of GB: {}".format(mem))
