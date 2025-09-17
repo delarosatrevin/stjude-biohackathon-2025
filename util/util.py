@@ -39,7 +39,6 @@ def run_command(arglist, user_name=None, timeout=60):
     if user_name is not None:
         proc = subprocess.Popen(
             arglist,
-            shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             stdin=subprocess.DEVNULL,
@@ -48,7 +47,6 @@ def run_command(arglist, user_name=None, timeout=60):
     else:
         proc = subprocess.Popen(
             arglist,
-            shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             stdin=subprocess.DEVNULL
