@@ -1,7 +1,7 @@
 """
 This file is used to collect/parse the nodes information from bhosts/lshosts commands
 """
-from util.util import run_command,get_gpu_type_for_node_from_lsf,
+from util.util import run_command,get_gpu_type_for_node_from_lsf
 from util.config import get_config
 from cluster.nodes import Node
 import re
