@@ -97,6 +97,7 @@ def parse_bhost_gpu_infor(output):
 
         # add in the node
         if len(infor) == 9:
+            print(line)
             name = infor[0]
             gpu_type = get_gpu_type_for_node_from_lsf(infor[2])
             node = Node(name,gpu_type)

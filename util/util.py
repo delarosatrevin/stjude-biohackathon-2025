@@ -5,7 +5,7 @@ This file stores the utility functions
 import subprocess
 from pwd import getpwnam
 from datetime import datetime
-from macros import VERY_BIG_NUMBER, GPU_TYPE
+from util.macros import VERY_BIG_NUMBER, GPU_TYPE
 import csv
 
 def run_command(arglist, user_name=None, timeout=60):
