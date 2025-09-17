@@ -103,9 +103,6 @@ def parse_bjobs_output_for_alljobs(output):
             raise RuntimeError("It seems the job used more than one node, currently we do not know how to get the data")
         host_name = get_hostname_from_bjobs_output(ori_host_name)
 
-        # user name, currently it's same with account name
-        job_user = account_name
-
         # now we have everything, building the Jobs object
         job_infor = Jobs(
             jobid = jobid,
@@ -121,7 +118,6 @@ def parse_bjobs_output_for_alljobs(output):
             gpu_used = gpu_used,
             memory_used = mem,
             compute_nodes = host_name,
-            user = job_user,
             account_name = account_name
         )
 
