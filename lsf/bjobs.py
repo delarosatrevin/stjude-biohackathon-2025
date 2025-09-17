@@ -62,7 +62,7 @@ def parse_bjobs_output_for_alljobs(output):
         submit_time      = get_time_data_from_lsf_output(data['RECORDS'][n]['SUBMIT_TIME'])
         start_time       = get_time_data_from_lsf_output(data['RECORDS'][n]['START_TIME'])
         pending_time     = int(convert_str_to_integer(data['RECORDS'][n]['PEND_TIME'])/60)
-        ori_time_left    = get_time_data_from_lsf_output(data['RECORDS'][n]['TIME_LEFT'])
+        ori_time_left    = data['RECORDS'][n]['TIME_LEFT']
         ori_running_time = data['RECORDS'][n]['RUN_TIME']
         ncpus_request    = convert_str_to_integer(data['RECORDS'][n]['NREQ_SLOT'])
         ori_mem_request  = data['RECORDS'][n]['MEMLIMIT']
