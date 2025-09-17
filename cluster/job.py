@@ -48,12 +48,17 @@ class Jobs:
         """
         for debugging print
         """
+
+        if self.job_remaining_time == VERY_BIG_NUMBER:
+            time_left = "None"
+        else:
+            time_left = str(self.job_remaining_time)
         return (f"jobID: {self.jobid}\n job_name: {self.job_name}\n submit_time: {self.submit_time}\n "
                 f"state: {self.state}\n pending_time(minute): {self.pending_time}\n "
-                f"job_remaining_time: {self.job_remaining_time}\n "
-                f"start_time: {self.start_time}\n used_time: {self.used_time}\n"
-                f"cpu_used: {self.cpu_used}\n gpu_used: {self.gpu_used}\n"
-                f"memory_used: {self.jobid}\n compute_nodes: {self.job_name}\n "
+                f"job_remaining_time(minutes): {time_left}\n "
+                f"start_time: {self.start_time}\n used_time(minutes): {self.used_time}\n "
+                f"cpu_used: {self.cpu_used}\n gpu_used: {self.gpu_used}\n "
+                f"memory_request(GB): {self.memory_used}\n compute_nodes: {self.compute_nodes}\n "
                 f"user: {self.user}\n account_name: {self.account_name}\n")
 
 
