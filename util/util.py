@@ -4,8 +4,8 @@ This file stores the utility functions
 """
 import subprocess
 from pwd import getpwnam
-from typing import Final
 from datetime import datetime
+from macros import VERY_BIG_NUMBER, GPU_TYPE
 import csv
 
 def run_command(arglist, user_name=None, timeout=60):
@@ -62,6 +62,78 @@ def run_command(arglist, user_name=None, timeout=60):
 
     # return
     return out.decode('utf-8')
+
+def whether_job_is_pending(state):
+    """
+    testing whether for the given input state for a job, it's in a "pending state"
+
+    pending state symbols are taken from the links below:
+
+    https://slurm.schedmd.com/squeue.html
+    https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=execution-about-job-states
+
+    :param state: string that representing a job state
+    :return: true if a job state is not in finished state
+    """
+    status = ["pend", "pending", "pd", "configuring", "cf"]
+    if state.lower() in status:
+        return True
+    else:
+        return False
+
+def whether_job_is_suspending(state):
+    """
+    testing whether for the given input state for a job, it's in a "suspending state"
+
+    suspending state symbols are taken from the links below:
+
+    https://slurm.schedmd.com/squeue.html
+    https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=bjobs-description
+
+    in slurm requeued jobs considered to be suspending, too
+
+    :param state: string that representing a job state
+    :return: true if a job state is not in finished state
+    """
+    status = ["psusp", "ususp", "ssusp", "prov", "wait", "suspended", "s", "requeued", "rq",
+              "requeue_hold", "rh", "resv_del_hold", "rd", "requeue_fed", "rf"]
+    if state.lower() in status:
+        return True
+    else:
+        return False
+
+def whether_job_is_running(state):
+    """
+    testing whether for the given input state for a job, it's in a "running state"
+
+    we also use it to test the service state, if it's in running
+
+    state symbols are taken from the links below:
+
+    https://slurm.schedmd.com/squeue.html
+    https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=bjobs-description
+
+    :param state: string that representing a job state
+    :return: true if a job state is not in finished state
+    """
+    status = state.lower()
+    if status == "r" or status.find("run") >= 0:
+        return True
+    else:
+        return False
+
+def whether_job_is_finished(state):
+    """
+    testing whether for the given input state for a job, it's in a "finished state". The finished state
+    could be in cancelled, dead, timeout, or successfully finished (like done)
+
+    :param state: string that representing a job state
+    :return: true if a job state is not in finished state
+    """
+    if whether_job_is_running(state) or whether_job_is_pending(state) or whether_job_is_suspending(state):
+        return False
+    else:
+        return True
 
 def get_time_data_from_lsf_output(data):
     """
@@ -180,6 +252,30 @@ def convert_str_to_integer(input):
         raise RuntimeError(info)
     return num
 
+def convert_lsf_time_to_minutes(input):
+    """
+    a simple function to convert the input string to time in minutes
+    :param input: the format is strict, must be something like 123:45, first one is hour; second one is minutes
+    :return: an integer number representing in minutes
+    """
+    # if input is empty, return a very big number
+    # usually if the data is missing that means we do not have the data
+    if not input.strip():
+        return VERY_BIG_NUMBER
+
+    # convert
+    if input.find(":") > 0:
+        s = input.strip().split(":")
+        v0 = convert_str_to_integer(s[0])
+        v1 = convert_str_to_integer(s[1])
+    else:
+        info = ("The input string must be in this format: 123:45, first is hour, second is minutes. "
+                "Original data is here: {}", input)
+        raise RuntimeError(info)
+
+    # now return the number
+    return v0*60 + v1
+
 def get_hostname_from_bjobs_output(input):
     """
     get the host name from the bjobs output
@@ -197,6 +293,24 @@ def get_hostname_from_bjobs_output(input):
     else:
         info = "Invalid string for paring to get hostname: {}".format(input)
         raise RuntimeError(info)
+
+def get_gpu_type_for_node_from_lsf(input):
+    """
+    check the gpu type from the input
+    :param input: input string obtained from lsf command
+    :return: the gpu type
+    """
+    for t in GPU_TYPE:
+        t0 = t.split("_")[0]
+        mem_label = t.split("_")[1]
+
+        # if the type match
+        if input.find(t0) > 0 and input.find(mem_label) > 0:
+            return t
+
+    # now if we are here, that means we did not find anything match
+    info = "Invalid input GPU type for paring: {}".format(input)
+    raise RuntimeError(info)
 
 def read_data_from_csv(file_name):
     """
