@@ -1,7 +1,7 @@
 """
 This file is used to collect/parse the nodes information from bhosts/lshosts commands
 """
-from util.util import run_command,get_gpu_type_for_node_from_lsf
+from util.util import run_command,get_gpu_type_for_node_from_lsf,
 from util.config import get_config
 from cluster.nodes import Node
 import re
@@ -70,9 +70,13 @@ def parse_lshosts_cpu_infor(output, nodelist):
                 ncpus = infor[4]
                 mem = infor[5]
 
-                # whether this is for GB size of mem?
-                if mem.find("G") > 0 or mem.find("g"):
+                # whether this is for GB/TB size of mem?
+                if mem.find("G") > 0 or mem.find("g") > 0:
                     mem_value = re.sub(r"\D", "", mem)
+                elif mem.find("T") > 0 or mem.find("t") > 0:
+                    val = re.sub(r"\D", "", mem)
+                    v1 = float(val)*1024
+                    mem_value = str(v1)
                 else:
                     raise RuntimeError("The input memory value should be in unit of GB: {}".format(mem))
 
@@ -97,7 +101,6 @@ def parse_bhost_gpu_infor(output):
 
         # add in the node
         if len(infor) == 9:
-            print(line)
             name = infor[0]
             gpu_type = get_gpu_type_for_node_from_lsf(infor[2])
             node = Node(name,gpu_type)
