@@ -26,7 +26,7 @@ def run_bjobs_get_alljobs():
 
     # get the argument list
     # we will run from current node
-    arg = CONFIG['lsf']['bjobs'].split() + [" -q ", CONFIG['lsf']['queue_name'], "-o", CONFIG['lsf']['bjobs_output_format']]
+    arg = CONFIG['lsf']['bjobs'].split() + ["-q", CONFIG['lsf']['queue_name'], "-o", CONFIG['lsf']['bjobs_output_format']]
     output = run_command(arg)
     return output
 
