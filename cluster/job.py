@@ -44,4 +44,12 @@ class Jobs:
         self.user               =  user               
         self.account_name       =  account_name
 
+    def __str__(self):
+        """
+        for debugging print
+        """
+        return (f"jobID: {self.jobid}\n job_name: {self.job_name}\n submit_time: {self.submit_time}\n "
+                f"state: {self.state}\n pending_time(minute): {self.pending_time}\n "
+                f"job_remaining_time: {self.job_remaining_time}\n ")
+
 
