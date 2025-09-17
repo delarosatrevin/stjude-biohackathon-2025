@@ -47,7 +47,7 @@ def create_cpu_node_list():
     namelist = CONFIG['lsf']['lshosts_cpu_node_list'].split()
     list = []
     for name in namelist:
-        node = Node(name,list)
+        node = Node(name,gpu_type)
         list.append(node)
     return list
 
