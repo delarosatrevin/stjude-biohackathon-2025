@@ -77,13 +77,10 @@ def parse_bjobs_output_for_alljobs(output):
 
         # remaining time
         # in default if we do not have the data, it's a very big number
-        if ori_time_left.find(":") > 0:
-            if ori_time_left.find("L") > 0:
-                remaining_time = convert_lsf_time_to_minutes(ori_time_left.strip().split()[0])
-            else:
-                remaining_time = convert_lsf_time_to_minutes(ori_time_left)
+        if ori_time_left.find("L") > 0:
+            remaining_time = convert_lsf_time_to_minutes(ori_time_left.strip().split()[0])
         else:
-            raise RuntimeError("Invalid time left data from bjobs passed in: {}".format(ori_time_left))
+            remaining_time = convert_lsf_time_to_minutes(ori_time_left)
 
         # memory
         # we only handle the GB/TB cases, other cases we will issue an error
