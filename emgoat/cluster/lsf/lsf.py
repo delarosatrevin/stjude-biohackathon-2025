@@ -100,7 +100,8 @@ class LSFCluster(Cluster):
                         raise RuntimeError("The input memory value should be in unit of GB: {}".format(mem))
 
                     # now let's update
-                    node.update_cores_mem_info(ncpus, mem_value)
+                    node.ncpus = ncpus
+                    node.total_mem_in_gb = mem_value
 
     def _get_gpu_type_for_node_from_lsf(self, input):
         """
@@ -235,9 +236,11 @@ class LSFCluster(Cluster):
                 raise RuntimeError("Invalid memory requested passed in: {}".format(ori_mem_request))
 
             # host name
-            if nhosts > 1:
-                raise RuntimeError(
-                    "It seems the job used more than one node, currently we do not know how to get the data")
+            # if nhosts > 1:
+            #     from pprint import pprint
+            #     pprint(record)
+            #     raise RuntimeError(
+            #         "It seems the job used more than one node, currently we do not know how to get the data")
 
             # now we have everything, building the Jobs object
             job_infor = self.Job(
@@ -253,7 +256,7 @@ class LSFCluster(Cluster):
                 cpu_used=ncpus_request,
                 gpu_used=gpu_used,
                 memory_used=mem,
-                compute_nodes=get_hostname_from_bjobs_output(ori_host_name),
+                compute_nodes=get_hostnames_from_bjobs_output(ori_host_name),
                 account_name=account_name
             )
 

@@ -189,20 +189,21 @@ def convert_lsf_time_to_minutes(input):
     return v0 * 60 + v1
 
 
-def get_hostname_from_bjobs_output(input):
+def get_hostnames_from_bjobs_output(input):
     """
-    get the host name from the bjobs output
+    get host names from the bjobs output
     :param input: input host name string, from bjobs output
     :return:  the host name
     """
-    # if input is empty, return None
-    if not input.strip():
-        return None
+    hostnames = []
 
-    # the string in format like 3*nodecem123, so node name is nodecem123
-    s = input.strip()
-    if s.find('*') >= 0:
-        return s.split('*')[1]
-    else:
-        info = "Invalid string for paring to get hostname: {}".format(input)
-        raise RuntimeError(info)
+    # if input is empty, return None
+    if s := input.strip():
+        parts = s.split(':') if ':' in s else [s]
+        for p in parts:
+            if '*' in p:
+                hostnames.append(p.split('*')[1])
+            else:
+                raise RuntimeError(f"Invalid string for paring to get hostname: {input}")
+
+    return hostnames
