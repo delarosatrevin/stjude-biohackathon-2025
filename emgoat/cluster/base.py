@@ -3,6 +3,7 @@
 #
 
 from abc import ABC, abstractmethod
+from emgoat.util import JOB_STATUS_PD
 
 
 class Cluster(ABC):
@@ -24,6 +25,12 @@ class Cluster(ABC):
             self.ngpus = 0
             self.ncpus = 0
             self.total_mem_in_gb = 0
+
+            # the data below are related to the resources used on the node
+            self.njobs = 0
+            self.gpus_in_use = 0
+            self.cores_in_use = 0
+            self.memory_in_use = 0
 
         def __str__(self):
             return (f"Node name={self.name}, "
@@ -98,11 +105,39 @@ class Cluster(ABC):
             self.account_name = name
             self.njobs = 0
             self.ngpus = 0
+            self.ncpus = 0
 
     @abstractmethod
     def get_nodes_info(self):
         pass
 
     @abstractmethod
-    def get_jobs_info(self):
+    def get_accounts_jobs_info(self):
         pass
+
+    def update_node_with_job_info(self, node_list, job_list):
+        """
+        this function will further update the node with the job information
+        """
+        for node in node_list:
+
+            # get the job landing on the node
+            for job in job_list:
+
+                # if the job is pending status, skip it
+                if job.general_state == JOB_STATUS_PD:
+                    continue
+
+                # update the node data
+                nodes = job.compute_nodes
+                if node in nodes:
+                    # usually the resources used are distributed evenly among
+                    # the nodes
+                    nnodes = len(nodes)
+                    ngpus_per_node = job.gpu_used/nnodes
+                    ncpus_per_node = job.cpu_used/nnodes
+                    mem_per_node = job.memory_used/nnodes
+                    node.njobs += 1
+                    node.gpus_in_use += ngpus_per_node
+                    node.cores_in_use += ncpus_per_node
+                    node.memory_in_use += mem_per_node
