@@ -95,6 +95,26 @@ def get_time_data_from_lsf_output(data):
     :return: the given datetime object
     """
 
+    # sometimes the input data is empty
+    # if so we just return a None value
+    if not data.strip():
+        return None
+
+    # split the input data into fields
+    fields = data.split()
+    if len(fields) != 3:
+        info = ("Invalid input data for parsing, it should be exactly in the "
+                "format like Jul 29 11:30, no year")
+        raise RuntimeError(info)
+
+    # now get the time
+    format_data = "%b %m %H:%M"
+    t = datetime.strptime(data, format_data)
+    return t
+
+"""
+    this is the old way we implement it
+
     # constant for the month
     m = {
         'jan': 1,
@@ -162,7 +182,7 @@ def get_time_data_from_lsf_output(data):
 
     # finally return
     return t
-
+"""
 
 def convert_lsf_time_to_minutes(input):
     """
