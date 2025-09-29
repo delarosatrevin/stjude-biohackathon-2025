@@ -1,2 +1,2 @@
 
-import relion
+from . import relion

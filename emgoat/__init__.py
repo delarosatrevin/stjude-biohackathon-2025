@@ -5,18 +5,19 @@ from .config import config
 from pprint import pprint
 
 
-def main(template_file, debug=False):
-    from .util import Loader
+class EMGoat:
 
-    template = Loader.load_from_file(template_file)
-    print(dir(template))
+    def __init__(self, template_file, debug=False):
+        from .util import Loader
 
-    module_str = template.PROCESS['module']
-    process_module = Loader.load_from_string(module_str)
-    print(dir(process_module))
+        self.debug = debug
+        template = Loader.load_from_file(template_file)
+        module_str = template.PROCESS['module']
+        process_module = Loader.load_from_string(module_str)
+        self.cmd = process_module.Command(template.COMMAND)
 
-    cmd = process_module.Command(template.COMMAND)
-    requirements = cmd.get_job_requirements()
+    def launch_job(self):
+        requirements = self.cmd.get_job_requirements()
 
-    if debug:
-        pprint(requirements)
+        if self.debug:
+            pprint(requirements)

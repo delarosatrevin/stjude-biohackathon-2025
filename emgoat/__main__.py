@@ -17,4 +17,4 @@ if __name__ == '__main__':
 
     args = p.parse_args()
 
-    emgoat.main(args.template, debug=args.debug)
+    emgoat.EMGoat(args.template, debug=args.debug).launch_job()
