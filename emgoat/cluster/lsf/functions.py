@@ -145,6 +145,8 @@ def get_hostnames_from_bjobs_output(input):
             if '*' in p:
                 hostnames.append(p.split('*')[1])
             else:
-                raise RuntimeError(f"Invalid string for paring to get hostname: {input}")
+                # for this case, usually the job only request one cpu
+                #raise RuntimeError(f"Invalid string for paring to get hostname: {input}")
+                hostnames.append(p)
 
     return hostnames
