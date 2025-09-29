@@ -3,85 +3,7 @@
 This file stores the utility functions 
 """
 from datetime import datetime
-
-from emgoat.util import (VERY_BIG_NUMBER, JOB_STATUS_PD, JOB_STATUS_RUN, JOB_STATUS_DONE,
-                         convert_str_to_integer, convert_percentage_to_decimal)
-
-
-def get_job_general_status(status):
-    # get the general status
-    if whether_job_is_pending(status) or whether_job_is_suspending(status):
-        return JOB_STATUS_PD
-    elif whether_job_is_running(status):
-        return JOB_STATUS_RUN
-    else:
-        return JOB_STATUS_DONE
-
-
-def whether_job_is_pending(state):
-    """
-    testing whether for the given input state for a job, it's in a "pending state"
-
-    pending state symbols are taken from the links below:
-
-    https://slurm.schedmd.com/squeue.html
-    https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=execution-about-job-states
-
-    :param state: string that representing a job state
-    :return: true if a job state is not in finished state
-    """
-    status = ["pend", "pending", "pd", "configuring", "cf"]
-    return state.lower() in status
-
-
-def whether_job_is_suspending(state):
-    """
-    testing whether for the given input state for a job, it's in a "suspending state"
-
-    suspending state symbols are taken from the links below:
-
-    https://slurm.schedmd.com/squeue.html
-    https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=bjobs-description
-
-    in slurm requeued jobs considered to be suspending, too
-
-    :param state: string that representing a job state
-    :return: true if a job state is not in finished state
-    """
-    status = ["psusp", "ususp", "ssusp", "prov", "wait", "suspended", "s", "requeued", "rq",
-              "requeue_hold", "rh", "resv_del_hold", "rd", "requeue_fed", "rf"]
-    return state.lower() in status
-
-
-def whether_job_is_running(state):
-    """
-    testing whether for the given input state for a job, it's in a "running state"
-
-    we also use it to test the service state, if it's in running
-
-    state symbols are taken from the links below:
-
-    https://slurm.schedmd.com/squeue.html
-    https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=bjobs-description
-
-    :param state: string that representing a job state
-    :return: true if a job state is not in finished state
-    """
-    status = state.lower()
-    return status == "r" or status.find("run") >= 0
-
-
-def whether_job_is_finished(state):
-    """
-    testing whether for the given input state for a job, it's in a "finished state". The finished state
-    could be in cancelled, dead, timeout, or successfully finished (like done)
-
-    :param state: string that representing a job state
-    :return: true if a job state is not in finished state
-    """
-    return not (whether_job_is_running(state) or
-                whether_job_is_pending(state) or
-                whether_job_is_suspending(state))
+from emgoat.util import VERY_BIG_NUMBER, convert_str_to_integer, convert_percentage_to_decimal
 
 
 def get_time_data_from_lsf_output(data):
@@ -94,6 +16,26 @@ def get_time_data_from_lsf_output(data):
     :param data: input time string
     :return: the given datetime object
     """
+
+    # sometimes the input data is empty
+    # if so we just return a None value
+    if not data.strip():
+        return None
+
+    # split the input data into fields
+    fields = data.split()
+    if len(fields) != 3:
+        info = ("Invalid input data for parsing, it should be exactly in the "
+                "format like Jul 29 11:30, no year")
+        raise RuntimeError(info)
+
+    # now get the time
+    format_data = "%b %m %H:%M"
+    t = datetime.strptime(data, format_data)
+    return t
+
+"""
+    this is the old way we implement it
 
     # constant for the month
     m = {
@@ -162,7 +104,7 @@ def get_time_data_from_lsf_output(data):
 
     # finally return
     return t
-
+"""
 
 def convert_lsf_time_to_minutes(input):
     """

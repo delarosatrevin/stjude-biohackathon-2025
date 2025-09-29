@@ -9,6 +9,7 @@ from pwd import getpwnam
 import importlib
 from datetime import datetime
 from .macros import VERY_BIG_NUMBER, GPU_TYPE
+from .macros import JOB_STATUS_DONE, JOB_STATUS_PD, JOB_STATUS_RUN
 
 
 def run_command(arglist, user_name=None, timeout=60):
@@ -64,6 +65,80 @@ def run_command(arglist, user_name=None, timeout=60):
     # return
     return out.decode('utf-8')
 
+def get_job_general_status(status):
+    # get the general status
+    if whether_job_is_pending(status) or whether_job_is_suspending(status):
+        return JOB_STATUS_PD
+    elif whether_job_is_running(status):
+        return JOB_STATUS_RUN
+    else:
+        return JOB_STATUS_DONE
+
+
+def whether_job_is_pending(state):
+    """
+    testing whether for the given input state for a job, it's in a "pending state"
+
+    pending state symbols are taken from the links below:
+
+    https://slurm.schedmd.com/squeue.html
+    https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=execution-about-job-states
+
+    :param state: string that representing a job state
+    :return: true if a job state is not in finished state
+    """
+    status = ["pend", "pending", "pd", "configuring", "cf"]
+    return state.lower() in status
+
+
+def whether_job_is_suspending(state):
+    """
+    testing whether for the given input state for a job, it's in a "suspending state"
+
+    suspending state symbols are taken from the links below:
+
+    https://slurm.schedmd.com/squeue.html
+    https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=bjobs-description
+
+    in slurm requeued jobs considered to be suspending, too
+
+    :param state: string that representing a job state
+    :return: true if a job state is not in finished state
+    """
+    status = ["psusp", "ususp", "ssusp", "prov", "wait", "suspended", "s", "requeued", "rq",
+              "requeue_hold", "rh", "resv_del_hold", "rd", "requeue_fed", "rf"]
+    return state.lower() in status
+
+
+def whether_job_is_running(state):
+    """
+    testing whether for the given input state for a job, it's in a "running state"
+
+    we also use it to test the service state, if it's in running
+
+    state symbols are taken from the links below:
+
+    https://slurm.schedmd.com/squeue.html
+    https://www.ibm.com/docs/en/spectrum-lsf/10.1.0?topic=bjobs-description
+
+    :param state: string that representing a job state
+    :return: true if a job state is not in finished state
+    """
+    status = state.lower()
+    return status == "r" or status.find("run") >= 0
+
+
+def whether_job_is_finished(state):
+    """
+    testing whether for the given input state for a job, it's in a "finished state". The finished state
+    could be in cancelled, dead, timeout, or successfully finished (like done)
+
+    :param state: string that representing a job state
+    :return: true if a job state is not in finished state
+    """
+    return not (whether_job_is_running(state) or
+                whether_job_is_pending(state) or
+                whether_job_is_suspending(state))
 
 def convert_percentage_to_decimal(input):
     """

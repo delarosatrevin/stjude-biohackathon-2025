@@ -3,7 +3,7 @@ import re
 import json
 
 import emgoat
-from emgoat.util import Config, run_command, VERY_BIG_NUMBER, GPU_TYPE
+from emgoat.util import Config, run_command, VERY_BIG_NUMBER, GPU_TYPE, get_job_general_status
 
 from .functions import *
 from ..base import Cluster
@@ -32,10 +32,10 @@ class LSFCluster(Cluster):
         # finally return the node list
         return node_list
 
-    def get_jobs_info(self):
+    def get_accounts_jobs_info(self):
         output = self._run_bjobs_get_alljobs()
-        job_list = self._parse_bjobs_output_for_alljobs(output)
-        return job_list
+        job_list, account_list = self._parse_bjobs_output_for_alljobs(output)
+        return job_list, account_list
 
     # ------------- HOST related internal functions ------------------
     def _run_bhosts_get_gpu_info(self):
@@ -263,5 +263,22 @@ class LSFCluster(Cluster):
             # add in result
             job_list.append(job_infor)
 
+            # checking the account
+            account_name_list = [x.account_name for x in account_list]
+            if account_name in account_name_list:
+                for acc in account_list:
+                    if acc.account_name == account_name:
+                        acc.njobs = acc.njobs + 1
+                        if gpu_used > 0:
+                            acc.ngpus = acc.ngpus + gpu_used
+                            acc.ncpus = acc.ncpus + ncpus_request
+            else:
+                acc = Cluster.Account(account_name)
+                acc.njobs = acc.njobs + 1
+                if gpu_used > 0:
+                    acc.ngpus = acc.ngpus + gpu_used
+                    acc.ncpus = acc.ncpus + ncpus_request
+                account_list.append(acc)
+
         # now return
-        return job_list
+        return job_list, account_list
