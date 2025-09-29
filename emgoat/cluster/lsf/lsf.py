@@ -25,6 +25,12 @@ class LSFCluster(Cluster):
     def get_accounts_info(self):
         return self.accounts_list
 
+    def get_time_interval_for_snapshots(self):
+        return self.time_interval_list
+
+    def get_data_for_snapshots(self):
+        return self.snapshots_node_list
+
     def __init__(self):
         """
         initialization of lsf cluster
@@ -41,6 +47,9 @@ class LSFCluster(Cluster):
 
         # now we need to update the current node usage
         super().update_node_with_job_info(node_list=self.nodes_list, job_list=self.jobs_list)
+
+        # now let's generate the future job snapshot in the list
+        self.time_interval_list, self.snapshots_node_list = self._generate_job_snapshots()
 
     # ------------- HOST related internal functions ------------------
 
@@ -338,7 +347,7 @@ class LSFCluster(Cluster):
         for x in self.jobs_list:
             if x.general_state == JOB_STATUS_RUN:
                 job_end_time = current + timedelta(minutes=int(x.job_remaining_time))
-                if job_end_time > begin and job_end_time < end:
+                if begin < job_end_time < end:
                     new_list.append(x)
         return new_list
 
@@ -375,20 +384,24 @@ class LSFCluster(Cluster):
             time_interval_list.append(begin)
 
         # loop over the time interval and generate the data
-        pos = 0
+        pos = -1
         for begin in time_interval_list:
 
             # set begin and end time
             end = begin + timedelta(minutes=interval)
 
             # set a copy of the node list
-            if pos == 0:
+            # we use the previous snapshot to make the new one
+            if pos < 0:
                 new_node_list = self.nodes_list.copy()
             else:
                 new_node_list = result[pos].copy()
 
+            # now let's increment the pos
+            pos = pos + 1
+
             # get the job list that end in this time interval
-            new_job_list = self._get_finished_jobs_list_in_time_window(begin, end)
+            new_job_list : list[Cluster.Job] = self._get_finished_jobs_list_in_time_window(begin, end)
 
             # updating the new node list with the new job list
             for job in new_job_list:
@@ -419,6 +432,9 @@ class LSFCluster(Cluster):
 
             # the result is formed, push it into the result
             result.append(new_node_list)
+
+        # finally return the results
+        return time_interval_list, result
 
 
 
