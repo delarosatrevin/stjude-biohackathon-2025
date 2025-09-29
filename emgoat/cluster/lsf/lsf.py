@@ -3,7 +3,7 @@ import re
 import json
 
 import emgoat
-from emgoat.util import Config, run_command, VERY_BIG_NUMBER, GPU_TYPE, get_job_general_status
+from emgoat.util import Config, run_command, VERY_BIG_NUMBER, LSF_CLUSTER, GPU_TYPE, get_job_general_status
 
 from .functions import *
 from ..base import Cluster
@@ -14,6 +14,35 @@ class LSFCluster(Cluster):
     _config = Config(emgoat.config['lsf'])
 
     def get_nodes_info(self):
+        return self.nodes_list
+
+    def get_jobs_info(self):
+        return self.jobs_list
+
+    def get_accounts_info(self):
+        return self.accounts_list
+
+    def __init__(self):
+        """
+        initialization of lsf cluster
+        """
+
+        # cluster type
+        super().__init__(LSF_CLUSTER)
+
+        # get the nodes information
+        self.nodes_list = self._set_nodes_info()
+
+        # get the job and accounts info
+        self.jobs_list, self.accounts_list = self._set_jobs_and_accounts_info()
+
+        # now we need to update the current node usage
+        super().update_node_with_job_info(node_list=self.nodes_list, job_list=self.jobs_list)
+
+    # ------------- HOST related internal functions ------------------
+
+    def _set_nodes_info(self):
+
         # firstly get the bhost output
         output = self._run_bhosts_get_gpu_info()
 
@@ -24,7 +53,8 @@ class LSFCluster(Cluster):
         cpu_node_list = self._create_cpu_node_list()
         node_list = gpu_node_list + cpu_node_list
 
-        # get the node names for the list
+        # get the node names for the list and push the cpus and memory
+        # information into the node list
         name_list = [x.name for x in node_list]
         output = self._run_lshosts_get_cpu_info(name_list)
         self._parse_lshosts_cpu_infor(output, node_list)
@@ -32,12 +62,11 @@ class LSFCluster(Cluster):
         # finally return the node list
         return node_list
 
-    def get_jobs_info(self):
+    def _set_jobs_and_accounts_info(self):
         output = self._run_bjobs_get_alljobs()
         job_list, account_list = self._parse_bjobs_output_for_alljobs(output)
         return job_list, account_list
 
-    # ------------- HOST related internal functions ------------------
     def _run_bhosts_get_gpu_info(self):
         """
         run the bhosts command to get node list and each node gpu information.

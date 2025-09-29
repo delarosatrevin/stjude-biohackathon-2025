@@ -33,16 +33,22 @@ class Cluster(ABC):
             self.memory_in_use = 0
 
         def __str__(self):
-            return (f"Node name={self.name}, "
-                    f"gpu type={self.gpu_type}, "
-                    f"ngpus={self.ngpus}, "
-                    f"ncpus={self.ncpus}, "
-                    f"mem={self.total_mem_in_gb} ")
+            return (f"Node name={self.name}, \n"
+                f"gpu type={self.gpu_type}, \n"
+                f"ngpus={self.ngpus}, \n"
+                f"ncpus={self.ncpus}, \n"
+                f"mem={self.total_mem_in_gb}, \n"
+                f"number of jobs={self.njobs}, \n"
+                f"number of gpus in use={self.gpus_in_use}, \n"
+                f"number of cores in use={self.cores_in_use}, \n"
+                f"current memory usage={self.memory_in_use} ")
 
     class Job:
         """ Structure to store jobs information. """
-        def __init__(self, jobid, job_name, submit_time, state, general_state, pending_time, job_remaining_time,
-                     start_time, used_time, cpu_used, gpu_used, memory_used, compute_nodes, account_name):
+        def __init__(self, jobid, job_name, submit_time, state, general_state,
+                     pending_time, job_remaining_time,
+                     start_time, used_time, cpu_used, gpu_used, memory_used,
+                     compute_nodes, account_name):
             """
             the job ID is an integer; from LSF/slurm etc. However for easy handling we just treat it as a string
 
@@ -107,12 +113,24 @@ class Cluster(ABC):
             self.ngpus = 0
             self.ncpus = 0
 
+        def __str__(self):
+            return (f"account name={self.account_name}, \n"
+                f"number of jobs={self.njobs}, \n"
+                f"ngpus={self.ngpus}, \n"
+                f"ncpus={self.ncpus} ")
+
+
+
     @abstractmethod
     def get_nodes_info(self):
         pass
 
     @abstractmethod
     def get_jobs_info(self):
+        pass
+
+    @abstractmethod
+    def get_accounts_info(self):
         pass
 
     def update_node_with_job_info(self, node_list, job_list):
@@ -141,3 +159,11 @@ class Cluster(ABC):
                     node.gpus_in_use += ngpus_per_node
                     node.cores_in_use += ncpus_per_node
                     node.memory_in_use += mem_per_node
+
+    def __init__(self, cluster_type):
+        """
+        initialization of cluster type for the super class
+
+        :param cluster_type: slurm or lsf for the cluster
+        """
+        self.cluster_type = cluster_type
