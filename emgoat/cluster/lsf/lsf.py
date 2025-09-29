@@ -3,15 +3,18 @@ import re
 import json
 
 import emgoat
-from emgoat.util import Config, run_command, VERY_BIG_NUMBER, LSF_CLUSTER, GPU_TYPE, get_job_general_status
+from emgoat.util import Config, run_command, VERY_BIG_NUMBER, LSF_CLUSTER, GPU_TYPE, get_job_general_status, \
+    JOB_STATUS_PD, JOB_STATUS_RUN
 
 from .functions import *
 from ..base import Cluster
+from datetime import datetime, timedelta
 
 
 class LSFCluster(Cluster):
     """ Cluster implementation for LSF system. """
     _config = Config(emgoat.config['lsf'])
+    _job_snapshots_config = Config(emgoat.config['job_snapshots'])
 
     def get_nodes_info(self):
         return self.nodes_list
@@ -311,3 +314,111 @@ class LSFCluster(Cluster):
 
         # now return
         return job_list, account_list
+
+    # ------------- internal functions for sorting the data ------------------
+    def _get_pending_job_list(self):
+        """
+        this function returns the pending job list
+
+        :return: a new job list only has the pending jobs
+        """
+        new_list = [x for x in self.jobs_list if x.general_state == JOB_STATUS_PD]
+        return new_list
+
+    def _get_finished_jobs_list_in_time_window(self, begin, end):
+        """
+        from the running job list, check whether there are jobs will finish
+        between the input begin and end time window
+        :param begin(Datetime): the beginning of the time window
+        :param end(Datetime): the end of hte time window
+        :return: a new job list
+        """
+        new_list = []
+        current = datetime.now()
+        for x in self.jobs_list:
+            if x.general_state == JOB_STATUS_RUN:
+                job_end_time = current + timedelta(minutes=int(x.job_remaining_time))
+                if job_end_time > begin and job_end_time < end:
+                    new_list.append(x)
+        return new_list
+
+    # ------------- job snapshots related internal functions ------------------
+    def _generate_job_snapshots(self):
+        """
+        based on the finished nodes list, and job list, we are able to form
+        the snapshots for the future resources
+
+        :return: two lists, one list contains the starting time for each time window
+        another list is list of list, each element in the list is a list of Node objects
+        that reflecting the future node status for the given time window
+        """
+
+        # this is the result
+        result = []
+
+        # this is the time interval list
+        time_interval_list = []
+
+        # get the config
+        conf = self._job_snapshots_config
+        interval = int(conf['job_snapshots_time_interval'])
+        num_snapshots = int(conf['number_job_snapshots'])
+
+        # get current time
+        # let me trucate it to only minutes
+        current = datetime.now().replace(second=0, microsecond=0)
+
+        # firstly generate the time interval list
+        # as estimation we take the seconds and microseconds down
+        for n in range(num_snapshots):
+            begin = current + n*timedelta(minutes=interval)
+            time_interval_list.append(begin)
+
+        # loop over the time interval and generate the data
+        pos = 0
+        for begin in time_interval_list:
+
+            # set begin and end time
+            end = begin + timedelta(minutes=interval)
+
+            # set a copy of the node list
+            if pos == 0:
+                new_node_list = self.nodes_list.copy()
+            else:
+                new_node_list = result[pos].copy()
+
+            # get the job list that end in this time interval
+            new_job_list = self._get_finished_jobs_list_in_time_window(begin, end)
+
+            # updating the new node list with the new job list
+            for job in new_job_list:
+                nodes = job.compute_nodes
+                for node in new_node_list:
+                    node_name = node.name
+                    if node_name in nodes:
+                        nnodes = len(nodes)
+                        if (job.gpu_used / nnodes).is_integer():
+                            ngpus_per_node = int(job.gpu_used / nnodes)
+                        else:
+                            raise RuntimeError("the number of gpus per node for the job should be "
+                                               "integer: ".format(job.gpu_used / nnodes))
+                        if (job.cpu_used / nnodes).is_integer():
+                            ncpus_per_node = int(job.cpu_used / nnodes)
+                        else:
+                            raise RuntimeError("the number of cpus per node for the job should be "
+                                               "integer: ".format(job.cpu_used / nnodes))
+                        if (job.memory_used / nnodes).is_integer():
+                            mem_per_node = int(job.memory_used / nnodes)
+                        else:
+                            raise RuntimeError("the memory usage per node for the job should be "
+                                               "integer: ".format(job.memory_used / nnodes))
+                        node.njobs -= 1
+                        node.gpus_in_use -= ngpus_per_node
+                        node.cores_in_use -= ncpus_per_node
+                        node.memory_in_use -= mem_per_node
+
+            # the result is formed, push it into the result
+            result.append(new_node_list)
+
+
+
