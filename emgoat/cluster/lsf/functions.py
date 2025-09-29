@@ -16,7 +16,8 @@ def get_time_data_from_lsf_output(data):
     :param data: input time string
     :return: the given datetime object
     """
-
+    
+    """
     # sometimes the input data is empty
     # if so we just return a None value
     if not data.strip():
@@ -33,9 +34,8 @@ def get_time_data_from_lsf_output(data):
     format_data = "%b %m %H:%M"
     t = datetime.strptime(data, format_data)
     return t
-
-"""
-    this is the old way we implement it
+    """
+    # this is the old way we implement it
 
     # constant for the month
     m = {
@@ -104,7 +104,6 @@ def get_time_data_from_lsf_output(data):
 
     # finally return
     return t
-"""
 
 def convert_lsf_time_to_minutes(input):
     """
