@@ -2,9 +2,11 @@
 """
 This file stores the utility functions 
 """
+import os
 import subprocess
 import csv
 from pwd import getpwnam
+import importlib
 from datetime import datetime
 from .macros import VERY_BIG_NUMBER, GPU_TYPE
 
@@ -152,3 +154,23 @@ class Config:
         for k in self._config:
             print(f"{k} = {self._config[k]}")
 
+
+class Loader:
+    @staticmethod
+    def load_from_file(module_path):
+        """ Load a module from a given file path. """
+        if not os.path.exists(module_path):
+            raise Exception("Missing file: " + module_path)
+
+        if spec := importlib.util.spec_from_file_location("jobfile", module_path):
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+
+            return module
+        else:
+            raise Exception("Invalid python file: " + module_path)
+
+    @staticmethod
+    def load_from_string(import_string):
+        """" Load a module or a class from a given import string. """
+        return importlib.import_module(import_string)
