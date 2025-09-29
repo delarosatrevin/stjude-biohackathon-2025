@@ -157,9 +157,21 @@ class Cluster(ABC):
                     # usually the resources used are distributed evenly among
                     # the nodes
                     nnodes = len(nodes)
-                    ngpus_per_node = job.gpu_used/nnodes
-                    ncpus_per_node = job.cpu_used/nnodes
-                    mem_per_node = job.memory_used/nnodes
+                    if (job.gpu_used/nnodes).is_integer():
+                        ngpus_per_node = int(job.gpu_used/nnodes)
+                    else:
+                        raise RuntimeError("the number of gpus per node for the job should be "
+                                           "integer: ".format(job.gpu_used/nnodes))
+                    if (job.cpu_used/nnodes).is_integer():
+                        ncpus_per_node = int(job.cpu_used/nnodes)
+                    else:
+                        raise RuntimeError("the number of cpus per node for the job should be "
+                                           "integer: ".format(job.cpu_used/nnodes))
+                    if (job.memory_used/nnodes).is_integer():
+                        mem_per_node = int(job.memory_used/nnodes)
+                    else:
+                        raise RuntimeError("the memory usage per node for the job should be "
+                                           "integer: ".format(job.memory_used/nnodes))
                     node.njobs += 1
                     node.gpus_in_use += ngpus_per_node
                     node.cores_in_use += ncpus_per_node
