@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 class LSFCluster(Cluster):
     """ Cluster implementation for LSF system. """
     _config = Config(emgoat.config['lsf'])
-    _job_snapshots_config = Config(emgoat.config['job_snapshots'])
+    _job_snapshots_config = Config(emgoat.config['snapshots'])
 
     def get_nodes_info(self):
         return self.nodes_list
