@@ -112,7 +112,7 @@ class Cluster(ABC):
         pass
 
     @abstractmethod
-    def get_accounts_jobs_info(self):
+    def get_jobs_info(self):
         pass
 
     def update_node_with_job_info(self, node_list, job_list):
