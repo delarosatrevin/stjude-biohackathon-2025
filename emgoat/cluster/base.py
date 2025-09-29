@@ -141,6 +141,9 @@ class Cluster(ABC):
         """
         for node in node_list:
 
+            # get the node name
+            node_name = node.name
+
             # get the job landing on the node
             for job in job_list:
 
@@ -150,7 +153,7 @@ class Cluster(ABC):
 
                 # update the node data
                 nodes = job.compute_nodes
-                if node in nodes:
+                if node_name in nodes:
                     # usually the resources used are distributed evenly among
                     # the nodes
                     nnodes = len(nodes)
