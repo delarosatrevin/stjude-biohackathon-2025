@@ -7,6 +7,8 @@ import subprocess
 import csv
 from pwd import getpwnam
 import importlib
+from importlib.machinery import SourceFileLoader
+
 from datetime import datetime
 from .macros import VERY_BIG_NUMBER, GPU_TYPE
 from .macros import JOB_STATUS_DONE, JOB_STATUS_PD, JOB_STATUS_RUN
@@ -64,6 +66,7 @@ def run_command(arglist, user_name=None, timeout=60):
 
     # return
     return out.decode('utf-8')
+
 
 def get_job_general_status(status):
     # get the general status
@@ -237,10 +240,11 @@ class Loader:
         if not os.path.exists(module_path):
             raise Exception("Missing file: " + module_path)
 
-        if spec := importlib.util.spec_from_file_location("jobfile", module_path):
+        loader = SourceFileLoader("jobfile", module_path)
+
+        if spec := importlib.util.spec_from_loader("jobfile", loader):
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
-
             return module
         else:
             raise Exception("Invalid python file: " + module_path)

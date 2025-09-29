@@ -4,11 +4,10 @@ import os
 import sys
 import argparse
 
-from emtools.utils import Pretty
-from emgoat.util import Loader
+import emgoat
 
 
-def main():
+if __name__ == '__main__':
     p = argparse.ArgumentParser(prog='emgoat')
 
     p.add_argument("template")
@@ -18,17 +17,4 @@ def main():
 
     args = p.parse_args()
 
-    template_file = args.template
-    Pretty.dprint(template_file)
-    template = Loader.load_from_file(template_file)
-    print(dir(template))
-
-    module_str = template.PROCESS['module']
-    module = Loader.load_from_string(module_str)
-    print(dir(module))
-
-
-
-
-if __name__ == '__main__':
-    main()
+    emgoat.main(args.template, debug=args.debug)
