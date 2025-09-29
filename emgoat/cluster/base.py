@@ -3,7 +3,7 @@
 #
 
 from abc import ABC, abstractmethod
-from emgoat.util import JOB_STATUS_PD
+from emgoat.util import JOB_STATUS_PD, VERY_BIG_NUMBER
 
 
 class Cluster(ABC):
@@ -33,16 +33,22 @@ class Cluster(ABC):
             self.memory_in_use = 0
 
         def __str__(self):
-            return (f"Node name={self.name}, "
-                    f"gpu type={self.gpu_type}, "
-                    f"ngpus={self.ngpus}, "
-                    f"ncpus={self.ncpus}, "
-                    f"mem={self.total_mem_in_gb} ")
+            return (f"Node name={self.name}, \n"
+                f"gpu type={self.gpu_type}, \n"
+                f"ngpus={self.ngpus}, \n"
+                f"ncpus={self.ncpus}, \n"
+                f"mem={self.total_mem_in_gb}, \n"
+                f"number of jobs={self.njobs}, \n"
+                f"number of gpus in use={self.gpus_in_use}, \n"
+                f"number of cores in use={self.cores_in_use}, \n"
+                f"current memory usage={self.memory_in_use} ")
 
     class Job:
         """ Structure to store jobs information. """
-        def __init__(self, jobid, job_name, submit_time, state, general_state, pending_time, job_remaining_time,
-                     start_time, used_time, cpu_used, gpu_used, memory_used, compute_nodes, account_name):
+        def __init__(self, jobid, job_name, submit_time, state, general_state,
+                     pending_time, job_remaining_time,
+                     start_time, used_time, cpu_used, gpu_used, memory_used,
+                     compute_nodes, account_name):
             """
             the job ID is an integer; from LSF/slurm etc. However for easy handling we just treat it as a string
 
@@ -80,12 +86,14 @@ class Cluster(ABC):
             self.account_name = account_name
 
         def __str__(self):
-            # FIXME: Set job_remaining_time = None when this happens
-            # if self.job_remaining_time == VERY_BIG_NUMBER:
-            #     time_left = "None"
-            time_left = str(self.job_remaining_time)
+            if self.job_remaining_time == VERY_BIG_NUMBER:
+                time_left = "None"
+            else:
+                time_left = str(self.job_remaining_time)
             return (f"jobID: {self.jobid}\n job_name: {self.job_name}\n submit_time: {self.submit_time}\n "
-                    f"state: {self.state}\n pending_time(minute): {self.pending_time}\n "
+                    f"state: {self.state}\n "
+                    f"general_state: {self.general_state}\n "
+                    f"pending_time(minute): {self.pending_time}\n "
                     f"job_remaining_time(minutes): {time_left}\n "
                     f"start_time: {self.start_time}\n used_time(minutes): {self.used_time}\n "
                     f"cpu_used: {self.cpu_used}\n gpu_used: {self.gpu_used}\n "
@@ -107,6 +115,14 @@ class Cluster(ABC):
             self.ngpus = 0
             self.ncpus = 0
 
+        def __str__(self):
+            return (f"account name={self.account_name}, \n"
+                f"number of jobs={self.njobs}, \n"
+                f"ngpus={self.ngpus}, \n"
+                f"ncpus={self.ncpus} ")
+
+
+
     @abstractmethod
     def get_nodes_info(self):
         pass
@@ -115,11 +131,18 @@ class Cluster(ABC):
     def get_jobs_info(self):
         pass
 
+    @abstractmethod
+    def get_accounts_info(self):
+        pass
+
     def update_node_with_job_info(self, node_list, job_list):
         """
         this function will further update the node with the job information
         """
         for node in node_list:
+
+            # get the node name
+            node_name = node.name
 
             # get the job landing on the node
             for job in job_list:
@@ -130,14 +153,34 @@ class Cluster(ABC):
 
                 # update the node data
                 nodes = job.compute_nodes
-                if node in nodes:
+                if node_name in nodes:
                     # usually the resources used are distributed evenly among
                     # the nodes
                     nnodes = len(nodes)
-                    ngpus_per_node = job.gpu_used/nnodes
-                    ncpus_per_node = job.cpu_used/nnodes
-                    mem_per_node = job.memory_used/nnodes
+                    if (job.gpu_used/nnodes).is_integer():
+                        ngpus_per_node = int(job.gpu_used/nnodes)
+                    else:
+                        raise RuntimeError("the number of gpus per node for the job should be "
+                                           "integer: ".format(job.gpu_used/nnodes))
+                    if (job.cpu_used/nnodes).is_integer():
+                        ncpus_per_node = int(job.cpu_used/nnodes)
+                    else:
+                        raise RuntimeError("the number of cpus per node for the job should be "
+                                           "integer: ".format(job.cpu_used/nnodes))
+                    if (job.memory_used/nnodes).is_integer():
+                        mem_per_node = int(job.memory_used/nnodes)
+                    else:
+                        raise RuntimeError("the memory usage per node for the job should be "
+                                           "integer: ".format(job.memory_used/nnodes))
                     node.njobs += 1
                     node.gpus_in_use += ngpus_per_node
                     node.cores_in_use += ncpus_per_node
                     node.memory_in_use += mem_per_node
+
+    def __init__(self, cluster_type):
+        """
+        initialization of cluster type for the super class
+
+        :param cluster_type: slurm or lsf for the cluster
+        """
+        self.cluster_type = cluster_type
