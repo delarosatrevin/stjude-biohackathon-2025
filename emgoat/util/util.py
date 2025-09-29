@@ -253,3 +253,27 @@ class Loader:
     def load_from_string(import_string):
         """" Load a module or a class from a given import string. """
         return importlib.import_module(import_string)
+
+
+def get_dict_from_args(args, start_index=2):
+    """ Get a dictionary from the parts after shlex.split of
+    the command string.
+    """
+    cmd_dict = {}
+    for p in args[start_index:]:
+        if p.startswith('--'):
+            last_key = p
+            cmd_dict[p] = ''
+        else:
+            v = cmd_dict[last_key]
+
+            if v:
+                if isinstance(v, list):
+                    v.append(p)
+                else:
+                    v = [v, p]
+            else:
+                v = p
+            cmd_dict[last_key] = v
+
+    return cmd_dict

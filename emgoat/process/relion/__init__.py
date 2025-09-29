@@ -1,22 +1,15 @@
 
 import shlex
 
+from emgoat.util import get_dict_from_args
+
 
 class Command:
     def __init__(self, cmd):
         self.original_command = cmd.strip()
         parts = shlex.split(self.original_command)
         self.program_name = parts[1].replace('`', '')
-
-        cmd_dict = {}
-        for p in parts[2:]:
-            if p.startswith('--'):
-                last_key = p
-                cmd_dict[p] = ''
-            else:
-                cmd_dict[last_key] = p
-
-        self.command_dict = cmd_dict
+        self.command_dict = get_dict_from_args(parts)
 
     def get_job_requirements(self, cluster=None):
         """ Depending on the job name and inputs,
