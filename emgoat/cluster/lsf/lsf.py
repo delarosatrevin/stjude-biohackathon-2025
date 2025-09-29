@@ -32,7 +32,7 @@ class LSFCluster(Cluster):
         # finally return the node list
         return node_list
 
-    def get_accounts_jobs_info(self):
+    def get_jobs_info(self):
         output = self._run_bjobs_get_alljobs()
         job_list, account_list = self._parse_bjobs_output_for_alljobs(output)
         return job_list, account_list
