@@ -43,6 +43,12 @@ class Cluster(ABC):
                 f"number of cores in use={self.cores_in_use}, \n"
                 f"current memory usage={self.memory_in_use} ")
 
+        def get_gpus_unused(self):
+            """
+            get the gpu card number which is currently not used
+            """
+            return self.ngpus - self.gpus_in_use
+
     class Job:
         """ Structure to store jobs information. """
         def __init__(self, jobid, job_name, submit_time, state, general_state,
@@ -166,6 +172,10 @@ class Cluster(ABC):
 
     @abstractmethod
     def generate_job_script(self, requirement, output):
+        pass
+
+    @abstractmethod
+    def get_cluster_overview(self):
         pass
 
     def update_node_with_job_info(self, node_list, job_list):

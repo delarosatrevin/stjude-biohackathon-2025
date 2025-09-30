@@ -362,6 +362,16 @@ class LSFCluster(Cluster):
                     new_list.append(x)
         return new_list
 
+    def _get_total_gpu_num(self):
+        """
+        for the current node list, get the total number of gpu cards
+        :return: the total number of gpu cards
+        """
+        total_gpu_num = 0
+        for node in self.nodes_list:
+            total_gpu_num += node.ngpus
+        return total_gpu_num
+
     # ------------- job snapshots related internal functions ------------------
     def _generate_job_snapshots(self):
         """
@@ -446,6 +456,26 @@ class LSFCluster(Cluster):
 
         # finally return the results
         return time_interval_list, result
+
+    # ------------- get the cluster overview, external use functions ---------------------
+    def get_cluster_overview(self):
+        """
+        this function returns a cluster overview
+        :return: a dict that describes the availability of gpu resources
+        """
+        total_gpu_num = self._get_total_gpu_num()
+        gpu_selections = [1, 2, 4, 6, 8]
+        result = {}
+        for gpu_select in gpu_selections:
+            available_slots = 0
+            for node in self.nodes_list:
+                gpus_remain = node.get_gpus_unused()
+                if gpus_remain >= gpu_select:
+                    available_slots += gpus_remain/gpu_select
+
+            # update the result
+            percentage = available_slots/total_gpu_num
+            result[gpu_select] = (available_slots, percentage)
 
     # ------------- generate lsf script for job, external use functions ------------------
     def generate_job_script(self, requirement, output):
