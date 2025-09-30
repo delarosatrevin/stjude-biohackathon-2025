@@ -13,10 +13,11 @@ class Command:
         parts = shlex.split(self.original_command)
         self.program_name = "" # The job_type that is going to be added later
         self.command_dict = get_dict_from_args(parts)
+        self.template = module.TEMPLATE
+        self.mem_gb = module.MEM
         self.cli = self.connect_cli_cryosparc(self.command_dict['--master_hostname'],
                                               self.command_dict["--master_command_core_port"][0],
                                               module.LICENSE_ID)
-
 
     def get_job_requirements(self, cluster=None):
         """ Depending on the job name and inputs,
@@ -50,15 +51,29 @@ class Command:
         job_info = self.cli.get_job(self.command_dict["--project"], self.command_dict["--job"])
         job_type = job_info['job_type']
         job_params = job_info['params_base']
-
         job_resources = job_info['resources_needed']
+        # First layer User demands
         job_summ_info = {
             "job_type": job_type,
             "job_params": job_params,
             "job_resources": job_resources
         }
+        # Second layer Command input
+        job_input_info = self.extract_job_input_information()
+        job_summ_info.update(job_input_info)
+
+        # Todo: Third layer Process info
 
         return job_summ_info
+
+    def extract_job_input_information(self):
+        job_info = self.cli.get_job(self.command_dict["--project"], self.command_dict["--job"])
+        input_slots = job_info['input_slot_groups']
+        import_id = get_imported_particles_uid(input_slots)
+        job_info_input = self.cli.get_job(self.command_dict["--project"], import_id)
+        input_info = get_blob_shape_and_num_items(job_info_input["output_result_groups"])
+
+        return input_info
 
     def _rule_cryosparc_import_particles(self):
         return Cluster.JobRequirements(ncpus=1)
@@ -71,9 +86,26 @@ class Command:
         return Cluster.JobRequirements(ngpus=2)
 
     def _rule_nonuniform_refine_new(self):
-        # num_classes = job_params['class2D_K']['value'] # Specific for 2D
+        return Cluster.JobRequirements(ngpus=4)
+
+    def _rule_homo_abinit(self):
         return Cluster.JobRequirements(ngpus=4)
 
 
-    def _rule_cryosparc_autopick(self): # TODO: check name
-        return Cluster.JobRequirements(ncpus=16)
+def get_imported_particles_uid(list_dicts):
+    for d in list_dicts:
+        connections = d.get("connections", [])
+        for conn in connections:
+            if conn.get("group_name") == "imported_particles":
+                return conn.get("job_uid")
+    return None  # if not found
+
+def get_blob_shape_and_num_items(list_dicts):
+    for d in list_dicts:
+        summary = d.get("summary", {})
+        if "blob/shape" in summary and "num_items" in d:
+            return {
+                "blob/shape": summary["blob/shape"],
+                "num_items": d["num_items"]
+            }
+    return None  # If not found
