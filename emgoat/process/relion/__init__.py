@@ -34,8 +34,8 @@ class Command:
         jobr = Cluster.JobRequirements(**kwargs)
         if jobr.ncpus <= 0:
             jobr.ncpus = jobr.ngpus * 10
-        if not jobr.memory:
-            jobr.memory = 8
+        if not jobr.total_memory:
+            jobr.total_memory = jobr.ncpus * 8  # FIXME: now hard-coded 8Gb per core
 
         return jobr
 

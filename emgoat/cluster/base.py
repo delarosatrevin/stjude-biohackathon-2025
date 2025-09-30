@@ -133,14 +133,14 @@ class Cluster(ABC):
 
             self.commands = kwargs.get('commands', [])
 
-            self.memory = kwargs.get('memory', None)
+            self.total_memory = kwargs.get('total_memory', None)
             self.gpu_type = kwargs.get('gpu_type', None)
             self.wall_time = kwargs.get('wall_time', None)
 
         def __str__(self):
             return (f"CPUs: {self.ncpus}\n"
                     f"GPUs: {self.ngpus}\n"
-                    f"memory: {self.memory}\n"
+                    f"total_memory: {self.total_memory}\n"
                     f"gpu_type: {self.gpu_type}\n"
                     f"wall_time: {self.wall_time}\n")
 
