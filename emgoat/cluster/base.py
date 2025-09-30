@@ -43,6 +43,24 @@ class Cluster(ABC):
                 f"number of cores in use={self.cores_in_use}, \n"
                 f"current memory usage={self.memory_in_use} ")
 
+        def get_gpus_unused(self):
+            """
+            get the gpu card number which is currently not used
+            """
+            return self.ngpus - self.gpus_in_use
+
+        def get_cpus_unused(self):
+            """
+            get the unused cpu cores number
+            """
+            return self.ncpus - self.cores_in_use
+
+        def get_memory_unused(self):
+            """
+            get the unused memory level
+            """
+            return self.total_mem_in_gb - self.memory_in_use
+
     class Job:
         """ Structure to store jobs information. """
         def __init__(self, jobid, job_name, submit_time, state, general_state,
@@ -124,21 +142,23 @@ class Cluster(ABC):
     class JobRequirements:
         """ Simple structure to store requirements for a given job. """
         def __init__(self, **kwargs):
-            self.ncpus = kwargs.get('ncpus', None)
-            self.ngpus = kwargs.get('ngpus', None)
+            self.ncpus = kwargs.get('ncpus', 0)
+            self.ngpus = kwargs.get('ngpus', 0)
 
             if not (self.ngpus or self.ncpus):
                 raise Exception("Either GPUs or GPUs should be specified for"
                                 "the job requirements. ")
 
-            self.memory = kwargs.get('memory', None)
+            self.commands = kwargs.get('commands', [])
+
+            self.total_memory = kwargs.get('total_memory', None)
             self.gpu_type = kwargs.get('gpu_type', None)
             self.wall_time = kwargs.get('wall_time', None)
 
         def __str__(self):
             return (f"CPUs: {self.ncpus}\n"
                     f"GPUs: {self.ngpus}\n"
-                    f"memory: {self.memory}\n"
+                    f"total_memory: {self.total_memory}\n"
                     f"gpu_type: {self.gpu_type}\n"
                     f"wall_time: {self.wall_time}\n")
 
@@ -152,6 +172,26 @@ class Cluster(ABC):
 
     @abstractmethod
     def get_accounts_info(self):
+        pass
+
+    @abstractmethod
+    def get_time_interval_for_snapshots(self):
+        pass
+
+    @abstractmethod
+    def get_data_for_snapshots(self):
+        pass
+
+    @abstractmethod
+    def generate_job_script(self, requirement, output):
+        pass
+
+    @abstractmethod
+    def get_cluster_overview(self):
+        pass
+
+    @abstractmethod
+    def get_job_availability_check(self, requirement):
         pass
 
     def update_node_with_job_info(self, node_list, job_list):
