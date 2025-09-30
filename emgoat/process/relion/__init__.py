@@ -1,16 +1,18 @@
 
 import shlex
 
+from emtools.jobs import Args
+
 from emgoat.cluster import Cluster
-from emgoat.util import get_dict_from_args
 
 
 class Command:
-    def __init__(self, cmd):
-        self.original_command = cmd.strip()
+    def __init__(self, template_module):
+        self.template_module = template_module
+        self.original_command = template_module.COMMAND.strip()
         parts = shlex.split(self.original_command)
         self.program_name = parts[1].replace('`', '')
-        self.command_dict = get_dict_from_args(parts)
+        self.args = Args.fromList(parts[2:])
 
     def get_job_requirements(self, cluster=None):
         """ Depending on the job name and inputs,
@@ -28,11 +30,25 @@ class Command:
 
         return requirements
 
+    def _requirements(self, **kwargs):
+        jobr = Cluster.JobRequirements(**kwargs)
+        if jobr.ncpus <= 0:
+            jobr.ncpus = jobr.ngpus * 10
+        if not jobr.total_memory:
+            jobr.total_memory = jobr.ncpus * 8  # FIXME: now hard-coded 8Gb per core
+
+        return jobr
+
+    def _rule_relion_run_motioncorr(self):
+        if '--use_own' in self.args:
+            jobr = self._requirements(ncpus=64)
+        else:
+            jobr = self._requirements(ngpus=4)
+        return jobr
+
     def _rule_relion_refine(self):
-        return Cluster.JobRequirements(ngpus=4)
+        return self._requirements(ngpus=4)
 
     def _rule_relion_autopick(self):
-        return Cluster.JobRequirements(ncpus=16)
+        return self._requirements(ncpus=16)
 
-    def _rule_relion_import_particles(self):
-        return Cluster.JobRequirements(ncpus=1)
