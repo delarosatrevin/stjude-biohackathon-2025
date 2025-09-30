@@ -1,7 +1,7 @@
 
 import re
 import json
-
+import copy
 import emgoat
 from emgoat.util import Config, run_command, VERY_BIG_NUMBER, LSF_CLUSTER, GPU_TYPE, get_job_general_status, \
     JOB_STATUS_PD, JOB_STATUS_RUN, is_str_float, is_str_integer, convert_float_to_integer,convert_str_to_integer
@@ -403,9 +403,9 @@ class LSFCluster(Cluster):
             # set a copy of the node list
             # we use the previous snapshot to make the new one
             if pos < 0:
-                new_node_list = self.nodes_list.copy()
+                new_node_list = copy.deepcopy(self.nodes_list)
             else:
-                new_node_list = result[pos].copy()
+                new_node_list = copy.deepcopy(result[pos])
 
             # now let's increment the pos
             pos = pos + 1
