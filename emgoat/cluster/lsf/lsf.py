@@ -1,10 +1,11 @@
 
-import re
+import os
 import json
 import copy
 import emgoat
-from emgoat.util import Config, run_command, VERY_BIG_NUMBER, LSF_CLUSTER, GPU_TYPE, get_job_general_status, \
-    JOB_STATUS_PD, JOB_STATUS_RUN, is_str_float, is_str_integer, convert_float_to_integer,convert_str_to_integer
+from emgoat.util import Config, run_command, LSF_CLUSTER, GPU_TYPE, get_job_general_status
+from emgoat.util import JOB_STATUS_PD, JOB_STATUS_RUN, is_str_float, is_str_integer
+from emgoat.util import convert_float_to_integer, convert_str_to_integer
 
 from .functions import *
 from ..base import Cluster
@@ -403,9 +404,9 @@ class LSFCluster(Cluster):
             # set a copy of the node list
             # we use the previous snapshot to make the new one
             if pos < 0:
-                new_node_list = copy.deepcopy(self.nodes_list)
+                new_node_list : list[Cluster.Node] = copy.deepcopy(self.nodes_list)
             else:
-                new_node_list = copy.deepcopy(result[pos])
+                new_node_list : list[Cluster.Node] = copy.deepcopy(result[pos])
 
             # now let's increment the pos
             pos = pos + 1
@@ -446,5 +447,53 @@ class LSFCluster(Cluster):
         # finally return the results
         return time_interval_list, result
 
+    # ------------- generate lsf script for job, external use functions ------------------
+    def generate_job_script(self, requirement, output):
+        """
+        this function generate the final output file
+        :param requirement job requirement (JobRequirements)
+        :param output the result output file
+        :return: the result job script will be in the output file
+        """
 
+        # we use the queue name from lsf
+        conf = self._config
+        queue_name = conf['queue_name']
 
+        # Check if the file exists
+        if os.path.exists(output):
+            info = f"Error: The job script '{output}' already exists. Aborting write operation."
+            raise IOError(info)
+        else:
+            # Open the file for writing
+            with open(output, 'w') as f:
+
+                # write the lsf job script
+                f.write("#!/bin/bash")
+                f.write("\n")
+
+                # cpu cores
+                f.write("#BSUB -n {}".format(requirement.ncpus))
+                f.write("\n")
+
+                # number of host
+                # we assume number of host is 1
+                f.write("#BSUB -R \'span[hosts=1]\'")
+                f.write("\n")
+
+                # queue information
+                f.write("#BSUB -q {}".format(queue_name))
+                f.write("\n")
+
+                # gpu
+                if requirement.ngpus > 0:
+                    gpu_line = "num={}:mode=shared:mps=no:j_exclusive=yes".format(requirement.ngpus)
+                    f.write("#BSUB -gpu {}".format(gpu_line))
+                    f.write("\n")
+
+                # memory
+                mem_per_core = requirement.total_memory/requirement.ncpus
+                f.write("#BSUB -R \'rusage[mem={}GB]\'".format(mem_per_core))
+                f.write("\n")
+
+            print(f"File '{output}' created and written successfully.")

@@ -1,6 +1,8 @@
 
 import pytest
+import os
 from emgoat.cluster import LSFCluster
+from emgoat.cluster import Cluster
 
 
 def test_jobs_info():
@@ -32,4 +34,19 @@ def test_future_snapshots():
         for node in data:
             print(node)
             print("\n")
+
+def test_lsf_script_generation():
+
+    # set the output for testing
+    output = "/tmp/emgoat_testing.lsf"
+    if os.path.exists(output):
+        os.remove(output)
+
+    # generate the job reqirment
+    requirement = Cluster.JobRequirements(ncpus=10,ngpus=4,total_memory=100)
+
+    # output the lsf cluster
+    lsf = LSFCluster()
+    lsf.generate_job_script(requirement, output)
+
 

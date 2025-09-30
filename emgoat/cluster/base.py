@@ -164,6 +164,10 @@ class Cluster(ABC):
     def get_data_for_snapshots(self):
         pass
 
+    @abstractmethod
+    def generate_job_script(self, requirement, output):
+        pass
+
     def update_node_with_job_info(self, node_list, job_list):
         """
         this function will further update the node with the job information
