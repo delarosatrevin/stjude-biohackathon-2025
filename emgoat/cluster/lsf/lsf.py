@@ -477,6 +477,9 @@ class LSFCluster(Cluster):
             percentage = available_slots/total_gpu_num
             result[gpu_select] = (available_slots, percentage)
 
+        # return the result
+        return result
+
     # ------------- generate lsf script for job, external use functions ------------------
     def generate_job_script(self, requirement, output):
         """
