@@ -19,3 +19,17 @@ def test_accounts_info():
         print(account)
         print("\n\n")
 
+def test_future_snapshots():
+    lsf = LSFCluster()
+    time_interval = lsf.get_time_interval_for_snapshots()
+    data_list = lsf.get_data_for_snapshots()
+    for n in range(len(time_interval)):
+        begin = time_interval[n]
+        data = data_list[n]
+        print("######################################")
+        print("begin time: {}".format(begin))
+        print("######################################")
+        for node in data:
+            print(node)
+            print("\n")
+

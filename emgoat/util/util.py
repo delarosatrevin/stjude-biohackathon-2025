@@ -5,6 +5,7 @@ This file stores the utility functions
 import os
 import subprocess
 import csv
+from math import floor
 from pwd import getpwnam
 import importlib
 from importlib.machinery import SourceFileLoader
@@ -12,7 +13,6 @@ from importlib.machinery import SourceFileLoader
 from datetime import datetime
 from .macros import VERY_BIG_NUMBER, GPU_TYPE
 from .macros import JOB_STATUS_DONE, JOB_STATUS_PD, JOB_STATUS_RUN
-
 
 def run_command(arglist, user_name=None, timeout=60):
     """
@@ -181,6 +181,39 @@ def convert_str_to_integer(input):
         raise RuntimeError(info)
     return num
 
+def is_str_float(s):
+    """
+    testing whether the string is floating number
+    :param s: input string
+    :return: True if the input string is a floating number
+    """
+    try:
+        float(s)
+        return True
+    except ValueError:
+        return False
+
+def convert_float_to_integer(s):
+    """
+    trucate the input string s from float format into integer
+    :return: the integer number
+    """
+    if is_str_float(s):
+        return int(floor(float(s)))
+    else:
+        raise RuntimeError("can not convert the input string to integer {}".format(s))
+
+def is_str_integer(s):
+    """
+    testing whether the string is integer number
+    :param s: input string
+    :return: True if the input string is an integer number
+    """
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
 
 def read_data_from_csv(file_name):
     """
