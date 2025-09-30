@@ -131,16 +131,18 @@ class LSFCluster(Cluster):
                     mem = infor[5]
 
                     # whether this is for GB/TB size of mem?
+                    # the value sometimes is a floating number
                     if mem.find("G") > 0 or mem.find("g") > 0:
-                        mem_value = re.sub(r"\D", "", mem)
+                        val = re.sub(r"\D", "", mem)
+                        v1  = int(float(val))
                     elif mem.find("T") > 0 or mem.find("t") > 0:
                         val = re.sub(r"\D", "", mem)
                         v1 = int(float(val) * 1024)
-                        mem_value = str(v1)
                     else:
                         raise RuntimeError("The input memory value should be in unit of GB: {}".format(mem))
 
                     # now let's update
+                    mem_value = str(v1)
                     node.ncpus = ncpus
                     node.total_mem_in_gb = mem_value
 
