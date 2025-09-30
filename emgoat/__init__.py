@@ -10,7 +10,7 @@ class EMGoat:
 
     def __init__(self, template_file, debug=False):
         from .util import Loader
-
+        self.template_file = template_file
         self.debug = debug
         template_module = Loader.load_from_file(template_file)
         module_str = template_module.PROCESS['module']
@@ -23,4 +23,5 @@ class EMGoat:
         if self.debug:
             print(requirements)
         else:
-            pass  # LAUNCH THE COMMAND
+            # FIXME: This should be done using the Cluster class
+            pass

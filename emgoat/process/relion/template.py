@@ -11,6 +11,9 @@ CLUSTER = {
 OUTFILE = "XXXoutfileXXX"
 ERRFILE = "XXXerrfileXXX"
 
+CORES = "XXXcoresXXX"
+MPI = "XXXmpinodesXXX"
+
 COMMAND = """
 XXXcommandXXX
 """
