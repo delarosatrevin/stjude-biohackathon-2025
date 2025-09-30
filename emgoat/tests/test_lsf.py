@@ -43,7 +43,7 @@ def test_lsf_script_generation():
         os.remove(output)
 
     # generate the job reqirment
-    requirement = Cluster.JobRequirements(ncpus=10,ngpus=4,total_memory=128)
+    requirement = Cluster.JobRequirements(ncpus=10,ngpus=4,total_memory=100)
 
     # output the lsf cluster
     lsf = LSFCluster()

@@ -492,7 +492,7 @@ class LSFCluster(Cluster):
                     f.write("\n")
 
                 # memory
-                mem_per_core = requirement.mem/requirement.ncpus
+                mem_per_core = requirement.total_memory/requirement.ncpus
                 f.write("#BSUB -R \'rusage[mem={}GB]\'".format(mem_per_core))
                 f.write("\n")
 
