@@ -151,8 +151,8 @@ class LSFCluster(Cluster):
                         raise RuntimeError("The input memory value should be in unit of GB: {}".format(mem))
 
                     # now let's update
-                    node.ncpus = ncpus
-                    node.total_mem_in_gb = str(val)
+                    node.ncpus = int(ncpus)
+                    node.total_mem_in_gb = val
 
     def _get_gpu_type_for_node_from_lsf(self, input):
         """
