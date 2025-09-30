@@ -29,7 +29,7 @@ def _write_template_file(f, cmd):
         print(f"Original command: {Color.bold(emg.cmd.original_command)}")
         for k, v in emg.cmd.command_dict.items():
             print(f"{k}: {v}")
-        #pprint(emg.cmd.command_dict)
+        print(f"Job requirements: \n{str(emg.cmd.get_job_requirements())}")
 
 
 def test_relion_autopick():
