@@ -8,6 +8,8 @@ import csv
 from math import floor
 from pwd import getpwnam
 import importlib
+from importlib.machinery import SourceFileLoader
+
 from datetime import datetime
 from .macros import VERY_BIG_NUMBER, GPU_TYPE
 from .macros import JOB_STATUS_DONE, JOB_STATUS_PD, JOB_STATUS_RUN
@@ -64,6 +66,7 @@ def run_command(arglist, user_name=None, timeout=60):
 
     # return
     return out.decode('utf-8')
+
 
 def get_job_general_status(status):
     # get the general status
@@ -270,10 +273,11 @@ class Loader:
         if not os.path.exists(module_path):
             raise Exception("Missing file: " + module_path)
 
-        if spec := importlib.util.spec_from_file_location("jobfile", module_path):
+        loader = SourceFileLoader("jobfile", module_path)
+
+        if spec := importlib.util.spec_from_loader("jobfile", loader):
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
-
             return module
         else:
             raise Exception("Invalid python file: " + module_path)
@@ -282,3 +286,27 @@ class Loader:
     def load_from_string(import_string):
         """" Load a module or a class from a given import string. """
         return importlib.import_module(import_string)
+
+
+def get_dict_from_args(args, start_index=2):
+    """ Get a dictionary from the parts after shlex.split of
+    the command string.
+    """
+    cmd_dict = {}
+    for p in args[start_index:]:
+        if p.startswith('--'):
+            last_key = p
+            cmd_dict[p] = ''
+        else:
+            v = cmd_dict[last_key]
+
+            if v:
+                if isinstance(v, list):
+                    v.append(p)
+                else:
+                    v = [v, p]
+            else:
+                v = p
+            cmd_dict[last_key] = v
+
+    return cmd_dict
