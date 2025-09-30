@@ -471,7 +471,7 @@ class LSFCluster(Cluster):
             for node in self.nodes_list:
                 gpus_remain = node.get_gpus_unused()
                 if gpus_remain >= gpu_select:
-                    available_slots += gpus_remain/gpu_select
+                    available_slots += int(gpus_remain/gpu_select)
 
             # update the result
             percentage = available_slots/total_gpu_num
