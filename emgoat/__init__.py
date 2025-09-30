@@ -20,4 +20,6 @@ class EMGoat:
         requirements = self.cmd.get_job_requirements()
 
         if self.debug:
-            pprint(requirements)
+            print(requirements)
+        else:
+            pass  # TODO: really launch the using the cluster class

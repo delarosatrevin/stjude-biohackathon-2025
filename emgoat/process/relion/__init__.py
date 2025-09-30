@@ -1,29 +1,26 @@
 
 import shlex
 
+from emgoat.cluster import Cluster
+from emgoat.util import get_dict_from_args
+
 
 class Command:
     def __init__(self, cmd):
         self.original_command = cmd.strip()
         parts = shlex.split(self.original_command)
         self.program_name = parts[1].replace('`', '')
-
-        cmd_dict = {}
-        for p in parts[2:]:
-            if p.startswith('--'):
-                last_key = p
-                cmd_dict[p] = ''
-            else:
-                cmd_dict[last_key] = p
-
-        self.command_dict = cmd_dict
+        self.command_dict = get_dict_from_args(parts)
 
     def get_job_requirements(self, cluster=None):
         """ Depending on the job name and inputs,
         determine the job requirements for execution. """
-        rule_func_name = f"_rule_{self.program_name}"
+        base_program_name = self.program_name.replace('_mpi', '')
+        rule_func_name = f"_rule_{base_program_name}"
         requirements = None
-        if rule_func := getattr(self, rule_func_name):
+        rule_func = getattr(self, rule_func_name, None)
+
+        if rule_func is not None:
             requirements = rule_func()
 
         if requirements is None:
@@ -31,8 +28,11 @@ class Command:
 
         return requirements
 
-    def relion_refine(self):
-        pass
+    def _rule_relion_refine(self):
+        return Cluster.JobRequirements(ngpus=4)
 
-    def relion_import_particles(self):
-        pass
+    def _rule_relion_autopick(self):
+        return Cluster.JobRequirements(ncpus=16)
+
+    def _rule_relion_import_particles(self):
+        return Cluster.JobRequirements(ncpus=1)
