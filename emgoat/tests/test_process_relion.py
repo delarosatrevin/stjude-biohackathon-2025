@@ -31,6 +31,18 @@ def _write_template_file(f, cmd):
             print(f"{k}: {v}")
         print(f"Job requirements: \n{str(emg.cmd.get_job_requirements())}")
 
+def test_relion_run_motioncorr():
+    _write_template_file(None,
+                         f"`which relion_run_motioncorr` "
+                         f"--i Import/job001/movies.star "
+                         f"--o MotionCorr/job002/ "
+                         f"--first_frame_sum 1 --last_frame_sum -1 "
+                         f"--use_own  --j 1 --float16 --bin_factor 1 "
+                         f"--bfactor 150 --dose_per_frame 1.277 --preexposure 0 "
+                         f"--patch_x 5 --patch_y 5 --eer_grouping 32 "
+                         f"--gainref Movies/gain.mrc --gain_rot 0 --gain_flip 0 "
+                         f"--dose_weighting  --grouping_for_ps 3 "
+                         f"--pipeline_control MotionCorr/job002/")
 
 def test_relion_autopick():
     cmd_str = "`which relion_autopick_mpi` --i Select/job005/micrographs_split1.star --odir AutoPick/job006/ --pickname autopick --LoG  --LoG_diam_min 150 --LoG_diam_max 180 --shrink 0 --lowpass 20 --LoG_adjust_threshold 0 --LoG_upper_threshold 5  --pipeline_control AutoPick/job006/"
