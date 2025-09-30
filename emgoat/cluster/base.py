@@ -124,21 +124,23 @@ class Cluster(ABC):
     class JobRequirements:
         """ Simple structure to store requirements for a given job. """
         def __init__(self, **kwargs):
-            self.ncpus = kwargs.get('ncpus', None)
-            self.ngpus = kwargs.get('ngpus', None)
+            self.ncpus = kwargs.get('ncpus', 0)
+            self.ngpus = kwargs.get('ngpus', 0)
 
             if not (self.ngpus or self.ncpus):
                 raise Exception("Either GPUs or GPUs should be specified for"
                                 "the job requirements. ")
 
-            self.memory = kwargs.get('memory', None)
+            self.commands = kwargs.get('commands', [])
+
+            self.total_memory = kwargs.get('total_memory', None)
             self.gpu_type = kwargs.get('gpu_type', None)
             self.wall_time = kwargs.get('wall_time', None)
 
         def __str__(self):
             return (f"CPUs: {self.ncpus}\n"
                     f"GPUs: {self.ngpus}\n"
-                    f"memory: {self.memory}\n"
+                    f"total_memory: {self.total_memory}\n"
                     f"gpu_type: {self.gpu_type}\n"
                     f"wall_time: {self.wall_time}\n")
 
