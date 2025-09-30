@@ -4,7 +4,7 @@ import json
 
 import emgoat
 from emgoat.util import Config, run_command, VERY_BIG_NUMBER, LSF_CLUSTER, GPU_TYPE, get_job_general_status, \
-    JOB_STATUS_PD, JOB_STATUS_RUN
+    JOB_STATUS_PD, JOB_STATUS_RUN, is_str_float, is_str_integer, convert_float_to_integer,convert_str_to_integer
 
 from .functions import *
 from ..base import Cluster
@@ -130,21 +130,29 @@ class LSFCluster(Cluster):
                     ncpus = infor[4]
                     mem = infor[5]
 
-                    # whether this is for GB/TB size of mem?
-                    # the value sometimes is a floating number
-                    if mem.find("G") > 0 or mem.find("g") > 0:
-                        val = re.sub(r"\D", "", mem)
-                        v1  = int(float(val))
-                    elif mem.find("T") > 0 or mem.find("t") > 0:
-                        val = re.sub(r"\D", "", mem)
-                        v1 = int(float(val) * 1024)
+                    # convert memory
+                    # memory should be only in unit of G or T
+                    #
+                    # the data should be a number with Unit G or T
+                    # so trim the last character
+                    if mem.find("G") > 0 or mem.find("g") > 0 or mem.find("T") > 0 or mem.find("t") > 0:
+                        v0 = mem[:-1]
+                        if is_str_float(v0):
+                            # in case the value is in unit of tb
+                            v1 = v0
+                            if mem.find("T") > 0 or mem.find("t") > 0:
+                                v1 = str(float(v0)*1024)
+                            val = convert_float_to_integer(v1)
+                        elif is_str_integer(v0):
+                            val = convert_str_to_integer(v0)
+                        else:
+                            raise RuntimeError("Failed to convert the input memory value: {}".format(mem))
                     else:
                         raise RuntimeError("The input memory value should be in unit of GB: {}".format(mem))
 
                     # now let's update
-                    mem_value = str(v1)
                     node.ncpus = ncpus
-                    node.total_mem_in_gb = mem_value
+                    node.total_mem_in_gb = str(val)
 
     def _get_gpu_type_for_node_from_lsf(self, input):
         """
