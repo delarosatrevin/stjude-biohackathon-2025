@@ -156,6 +156,14 @@ class Cluster(ABC):
     def get_accounts_info(self):
         pass
 
+    @abstractmethod
+    def get_time_interval_for_snapshots(self):
+        pass
+
+    @abstractmethod
+    def get_data_for_snapshots(self):
+        pass
+
     def update_node_with_job_info(self, node_list, job_list):
         """
         this function will further update the node with the job information
