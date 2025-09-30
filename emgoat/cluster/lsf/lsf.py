@@ -362,6 +362,16 @@ class LSFCluster(Cluster):
                     new_list.append(x)
         return new_list
 
+    def _get_total_gpu_num(self):
+        """
+        for the current node list, get the total number of gpu cards
+        :return: the total number of gpu cards
+        """
+        total_gpu_num = 0
+        for node in self.nodes_list:
+            total_gpu_num += node.ngpus
+        return total_gpu_num
+
     # ------------- job snapshots related internal functions ------------------
     def _generate_job_snapshots(self):
         """
@@ -446,6 +456,102 @@ class LSFCluster(Cluster):
 
         # finally return the results
         return time_interval_list, result
+
+    # ------------- get the cluster overview, external use functions ---------------------
+    def get_cluster_overview(self):
+        """
+        this function returns a cluster overview
+        :return: a dict that describes the availability of gpu resources
+        """
+        total_gpu_num = self._get_total_gpu_num()
+        gpu_selections = [1, 2, 4, 6, 8]
+        result = {}
+        for gpu_select in gpu_selections:
+            available_slots = 0
+            for node in self.nodes_list:
+                gpus_remain = node.get_gpus_unused()
+                if gpus_remain >= gpu_select:
+                    available_slots += int(gpus_remain/gpu_select)
+
+            # update the result
+            percentage = available_slots/total_gpu_num
+            result[gpu_select] = (available_slots, percentage)
+
+        # return the result
+        return result
+
+    # ------------- get the job estimation, external use functions ---------------------
+    def get_job_availability_check(self, requirement):
+        """
+        for the input job requirement, let's return the availability for the job
+        :param requirement: input job requirement
+        :return: a dict that for the gpus, memory etc. selection what is the availability in
+        cluster
+        """
+
+        # set up the result
+        result = {}
+
+        # checking gpu
+        gpu_availability = 0
+        gpu_select = requirement.ngpus
+        if gpu_select > 0:
+            for node in self.nodes_list:
+                gpus_remain = node.get_gpus_unused()
+                if gpus_remain >= gpu_select:
+                    gpu_availability += int(gpus_remain/gpu_select)
+
+            # update the result
+            result["gpu"] = gpu_availability
+
+        # cpu cores
+        cpu_availability = 0
+        cpu_select = requirement.ncpus
+        if cpu_select > 0:
+            for node in self.nodes_list:
+                cpus_remain = node.get_cpus_unused()
+                if cpus_remain >= cpu_select:
+                    cpu_availability += int(cpus_remain/cpu_select)
+
+            # update the result
+            result["cpu"] = cpu_availability
+
+        # memory availability
+        mem_availability = 0
+        mem_select = requirement.total_memory
+        if mem_select > 0:
+            for node in self.nodes_list:
+                mem_remain = node.get_memory_unused()
+                if mem_remain >= mem_select:
+                    mem_availability += int(mem_remain/mem_select)
+
+            # update the result
+            result["mem"] = mem_availability
+
+        # combination of memory, gpus and cpu cores
+        # see whether we have available slots currently in cluster
+        avail_slots = 0
+        for node in self.nodes_list:
+            mem_remain = node.get_memory_unused()
+            cpus_remain = node.get_cpus_unused()
+            gpus_remain = node.get_gpus_unused()
+            if gpu_select > 0:
+                if mem_remain >= mem_select and cpus_remain >= cpu_select and gpus_remain >=gpu_select:
+                    mem_avail = int(mem_remain/mem_select)
+                    cpu_avail = int(cpus_remain/cpu_select)
+                    gpu_avail = int(gpus_remain/gpu_select)
+                    avail_slots += min(mem_avail, cpu_avail, gpu_avail)
+            else:
+                if mem_remain >= mem_select and cpus_remain >= cpu_select:
+                    mem_avail = int(mem_remain/mem_select)
+                    cpu_avail = int(cpus_remain/cpu_select)
+                    avail_slots += min(mem_avail, cpu_avail)
+
+        # update the result
+        result['job'] = avail_slots
+
+        # return the result
+        return result
 
     # ------------- generate lsf script for job, external use functions ------------------
     def generate_job_script(self, requirement, output):

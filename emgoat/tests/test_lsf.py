@@ -49,4 +49,19 @@ def test_lsf_script_generation():
     lsf = LSFCluster()
     lsf.generate_job_script(requirement, output)
 
+def test_lsf_overview():
+    lsf = LSFCluster()
+    overview = lsf.get_cluster_overview()
+    for key, value in overview.items():
+        print("for gpu card: {0} there are {1} available slots and the "
+              "available percentage is {2:.3f}\n".format(key, value[0], value[1]))
+
+
+def test_lsf_job_availability():
+    lsf = LSFCluster()
+    requirement = Cluster.JobRequirements(ncpus=10, ngpus=4, total_memory=100)
+    result = lsf.get_job_availability_check(requirement)
+    for key, value in result.items():
+        print("Checking the case: {0} there are {1} available "
+              "slots\n".format(key, value))
 
