@@ -3,17 +3,18 @@ import os
 import json
 import copy
 import emgoat
-from emgoat.util import Config, run_command, LSF_CLUSTER, GPU_TYPE, get_job_general_status
+from emgoat.util import Config, run_command, GPU_TYPE, get_job_general_status
 from emgoat.util import JOB_STATUS_PD, JOB_STATUS_RUN, is_str_float, is_str_integer
 from emgoat.util import convert_float_to_integer, convert_str_to_integer
 
 from .functions import *
-from ..base import Cluster
+from ..base import Cluster as BaseCluster
 from datetime import datetime, timedelta
 
 
-class LSFCluster(Cluster):
+class Cluster(BaseCluster):
     """ Cluster implementation for LSF system. """
+    _name = "lsf"
     _config = Config(emgoat.config['lsf'])
     _job_snapshots_config = Config(emgoat.config['snapshots'])
 
@@ -38,7 +39,7 @@ class LSFCluster(Cluster):
         """
 
         # cluster type
-        super().__init__(LSF_CLUSTER)
+        super().__init__()
 
         # get the nodes information
         self.nodes_list = self._set_nodes_info()
@@ -87,8 +88,6 @@ class LSFCluster(Cluster):
 
         :return: the raw output for the bhost command
         """
-        global CONFIG
-
         # get the argument list
         # we will run from current node
         arg = self._config.get_list('bhosts_gpu_info')
@@ -395,7 +394,7 @@ class LSFCluster(Cluster):
         num_snapshots = int(conf['number_job_snapshots'])
 
         # get current time
-        # let me trucate it to only minutes
+        # let me truncate it to only minutes
         current = datetime.now().replace(second=0, microsecond=0)
 
         # firstly generate the time interval list
@@ -414,15 +413,15 @@ class LSFCluster(Cluster):
             # set a copy of the node list
             # we use the previous snapshot to make the new one
             if pos < 0:
-                new_node_list : list[Cluster.Node] = copy.deepcopy(self.nodes_list)
+                new_node_list: list[Cluster.Node] = copy.deepcopy(self.nodes_list)
             else:
-                new_node_list : list[Cluster.Node] = copy.deepcopy(result[pos])
+                new_node_list: list[Cluster.Node] = copy.deepcopy(result[pos])
 
             # now let's increment the pos
             pos = pos + 1
 
             # get the job list that end in this time interval
-            new_job_list : list[Cluster.Job] = self._get_finished_jobs_list_in_time_window(begin, end)
+            new_job_list: list[Cluster.Job] = self._get_finished_jobs_list_in_time_window(begin, end)
 
             # updating the new node list with the new job list
             for job in new_job_list:
@@ -554,10 +553,13 @@ class LSFCluster(Cluster):
         return result
 
     # ------------- generate lsf script for job, external use functions ------------------
-    def generate_job_script(self, requirement, output):
+    def launch_job(self, job_requirements):
+        pass
+
+    def generate_job_script(self, jobr, output):
         """
         this function generate the final output file
-        :param requirement job requirement (JobRequirements)
+        :param jobr job requirement (JobRequirements)
         :param output the result output file
         :return: the result job script will be in the output file
         """
@@ -571,35 +573,23 @@ class LSFCluster(Cluster):
             info = f"Error: The job script '{output}' already exists. Aborting write operation."
             raise IOError(info)
         else:
-            # Open the file for writing
+            # Open the file for writing the LSF job script
             with open(output, 'w') as f:
-
-                # write the lsf job script
-                f.write("#!/bin/bash")
-                f.write("\n")
-
+                f.write("#!/bin/bash\n")
                 # cpu cores
-                f.write("#BSUB -n {}".format(requirement.ncpus))
-                f.write("\n")
-
-                # number of host
-                # we assume number of host is 1
-                f.write("#BSUB -R \'span[hosts=1]\'")
-                f.write("\n")
-
+                f.write(f"#BSUB -n {jobr.ncpus}\n")
+                # number of hosts, assuming 1 for now
+                f.write(f"#BSUB -R 'span[hosts=1]'\n")
                 # queue information
-                f.write("#BSUB -q {}".format(queue_name))
-                f.write("\n")
-
+                f.write(f"#BSUB -q {queue_name}\n")
                 # gpu
-                if requirement.ngpus > 0:
-                    gpu_line = "num={}:mode=shared:mps=no:j_exclusive=yes".format(requirement.ngpus)
-                    f.write("#BSUB -gpu {}".format(gpu_line))
-                    f.write("\n")
-
+                if jobr.ngpus > 0:
+                    gpu_line = f"num={jobr.ngpus}:mode=shared:mps=no:j_exclusive=yes"
+                    f.write(f"#BSUB -gpu {gpu_line}\n")
                 # memory
-                mem_per_core = requirement.total_memory/requirement.ncpus
-                f.write("#BSUB -R \'rusage[mem={}GB]\'".format(mem_per_core))
-                f.write("\n")
+                mem_per_core = jobr.total_memory // jobr.ncpus
+                f.write(f"#BSUB -R 'rusage[mem={mem_per_core}GB]'\n")
+                for cmd in jobr.commands:
+                    f.write(f"\n{cmd}\n")
 
             print(f"File '{output}' created and written successfully.")

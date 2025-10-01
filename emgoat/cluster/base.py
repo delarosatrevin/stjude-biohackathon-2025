@@ -12,6 +12,7 @@ class Cluster(ABC):
     to a cluster. Subclasses should implement the functions to interact
     with specific cluster flavors (e.g., LSF, SLURM, etc.)
     """
+    _name = None  # Should be defined in subclasses
 
     class Node:
         """ Structure to store basic information about cluster nodes. """
@@ -175,15 +176,19 @@ class Cluster(ABC):
         pass
 
     @abstractmethod
+    def generate_job_script(self, requirements, output):
+        pass
+
+    @abstractmethod
+    def launch_job(self, job_requirements):
+        pass
+
+    @abstractmethod
     def get_time_interval_for_snapshots(self):
         pass
 
     @abstractmethod
     def get_data_for_snapshots(self):
-        pass
-
-    @abstractmethod
-    def generate_job_script(self, requirement, output):
         pass
 
     @abstractmethod
@@ -235,11 +240,3 @@ class Cluster(ABC):
                     node.gpus_in_use += ngpus_per_node
                     node.cores_in_use += ncpus_per_node
                     node.memory_in_use += mem_per_node
-
-    def __init__(self, cluster_type):
-        """
-        initialization of cluster type for the super class
-
-        :param cluster_type: slurm or lsf for the cluster
-        """
-        self.cluster_type = cluster_type

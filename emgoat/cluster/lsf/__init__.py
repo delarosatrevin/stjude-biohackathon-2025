@@ -1,2 +1,2 @@
 
-from .lsf import LSFCluster
+from .lsf import Cluster

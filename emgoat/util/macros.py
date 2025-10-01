@@ -47,9 +47,3 @@ GPU_TYPE = ["V100_16G", "V100_32G", "A100_80G"]
 # this value (seconds or minutes)
 ############################
 VERY_BIG_NUMBER = 1000000000
-
-############################
-# name for the cluster
-############################
-LSF_CLUSTER = "lsf"
-SLURM_CLUSTER = "slurm"
