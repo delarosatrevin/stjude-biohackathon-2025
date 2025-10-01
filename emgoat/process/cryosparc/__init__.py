@@ -1,22 +1,25 @@
 
 import shlex
-from cryosparc.tools import CommandClient
 
+from emtools.jobs import Args
 from emgoat.cluster import Cluster
 from emgoat.util import get_dict_from_args
 
 SUFFIX_JOB = "cryosparc_"
 
+
 class Command:
-    def __init__(self, cmd, module):
-        self.original_command = cmd.strip()
+    def __init__(self, module):
+        self.original_command = module.COMMAND.strip()
+
+        self.program_name = ""  # The job_type that is going to be added later
         parts = shlex.split(self.original_command)
-        self.program_name = "" # The job_type that is going to be added later
-        self.command_dict = get_dict_from_args(parts)
+        self.args = Args.fromList(parts[2:])
         self.template = module.TEMPLATE
+        self.ngpus = int(module.GPUS)
         self.mem_gb = module.MEM
-        self.cli = self.connect_cli_cryosparc(self.command_dict['--master_hostname'],
-                                              self.command_dict["--master_command_core_port"][0],
+        self.cli = self.connect_cli_cryosparc(self.args['--master_hostname'],
+                                              self.args["--master_command_core_port"][0],
                                               module.LICENSE_ID)
 
     def get_job_requirements(self, cluster=None):
@@ -41,6 +44,7 @@ class Command:
     def connect_cli_cryosparc(self, host, port, license_id):
         """ Try to connect to cryoSPARC CommandClient. """
         try:
+            from cryosparc.tools import CommandClient
             cli = CommandClient(host=host, port=port, headers={"License-ID": license_id})
             return cli
         except Exception as e:
@@ -48,7 +52,7 @@ class Command:
             return None
 
     def extract_job_information(self):
-        job_info = self.cli.get_job(self.command_dict["--project"], self.command_dict["--job"])
+        job_info = self.cli.get_job(self.args["--project"], self.args["--job"])
         job_type = job_info['job_type']
         job_params = job_info['params_base']
         job_resources = job_info['resources_needed']
@@ -67,10 +71,10 @@ class Command:
         return job_summ_info
 
     def extract_job_input_information(self):
-        job_info = self.cli.get_job(self.command_dict["--project"], self.command_dict["--job"])
+        job_info = self.cli.get_job(self.args["--project"], self.args["--job"])
         input_slots = job_info['input_slot_groups']
         import_id = get_imported_particles_uid(input_slots)
-        job_info_input = self.cli.get_job(self.command_dict["--project"], import_id)
+        job_info_input = self.cli.get_job(self.args["--project"], import_id)
         input_info = get_blob_shape_and_num_items(job_info_input["output_result_groups"])
 
         return input_info
@@ -81,9 +85,10 @@ class Command:
     def _rule_cryosparc_import_volumes(self):
         return Cluster.JobRequirements(ncpus=1)
 
-    def _rule_cryosparc_class_2D(self):
+    def _rule_cryosparc_class_2D_new(self):
         # num_classes = job_params['class2D_K']['value'] # Specific for 2D
-        return Cluster.JobRequirements(ngpus=2)
+        return Cluster.JobRequirements(ngpus=self.ngpus,
+                                       commands=[self.original_command])
 
     def _rule_nonuniform_refine_new(self):
         return Cluster.JobRequirements(ngpus=4)
