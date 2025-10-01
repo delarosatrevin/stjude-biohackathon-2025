@@ -395,8 +395,12 @@ class Cluster(BaseCluster):
         # comparing with this job
         n_similar_jobs = 0
         for job in pending_jobs:
-            if job.cpu_used <= ncpus and job.gpu_used <= ngpus and job.memory_used <= mem_required:
-                n_similar_jobs += 1
+            if ngpus > 0:
+                if job.cpu_used <= ncpus and job.gpu_used > 0 and job.gpu_used <= ngpus and job.memory_used <= mem_required:
+                    n_similar_jobs += 1
+            else:
+                if job.cpu_used <= ncpus and job.memory_used <= mem_required and job.gpu_used == 0:
+                    n_similar_jobs += 1
 
         # return the number
         return n_similar_jobs
