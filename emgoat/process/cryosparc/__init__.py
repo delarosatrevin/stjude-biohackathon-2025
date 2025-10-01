@@ -15,9 +15,8 @@ class Command:
         self.program_name = ""  # The job_type that is going to be added later
         parts = shlex.split(self.original_command)
         self.args = Args.fromList(parts[2:])
-        self.template = module.TEMPLATE
         self.ngpus = int(module.GPUS)
-        self.mem_gb = module.MEM
+        self.mem_gb = int(module.MEM[:-1])
         self.cli = self.connect_cli_cryosparc(self.args['--master_hostname'],
                                               self.args["--master_command_core_port"][0],
                                               module.LICENSE_ID)
@@ -26,8 +25,8 @@ class Command:
         """ Depending on the job name and inputs,
         determine the job requirements for execution. """
 
-        job_info = self.extract_job_information()
-        self.program_name = SUFFIX_JOB + job_info["job_type"]
+        self.job_info = self.extract_job_information()
+        self.program_name = SUFFIX_JOB + self.job_info["job_type"]
         # base_program_name = self.program_name.replace(SUFFIX_JOB, '')
         rule_func_name = f"_rule_{self.program_name}"
         requirements = None
@@ -79,22 +78,29 @@ class Command:
 
         return input_info
 
+    def _requirements(self, **kwargs):
+        jobr = Cluster.JobRequirements(**kwargs)
+        if jobr.ncpus <= 0:
+            jobr.ncpus = jobr.ngpus * 5
+        jobr.total_memory = self.mem_gb  # FIXME: now hard-coded 8Gb per core
+        return jobr
+
     def _rule_cryosparc_import_particles(self):
-        return Cluster.JobRequirements(ncpus=1)
+        return self._requirements(ncpus=1)
 
     def _rule_cryosparc_import_volumes(self):
-        return Cluster.JobRequirements(ncpus=1)
+        return self._requirements(ncpus=1)
 
     def _rule_cryosparc_class_2D_new(self):
         # num_classes = job_params['class2D_K']['value'] # Specific for 2D
-        return Cluster.JobRequirements(ngpus=self.ngpus,
+        return self._requirements(ngpus=self.ngpus,
                                        commands=[self.original_command])
 
     def _rule_nonuniform_refine_new(self):
-        return Cluster.JobRequirements(ngpus=4)
+        return self._requirements(ngpus=4)
 
     def _rule_homo_abinit(self):
-        return Cluster.JobRequirements(ngpus=4)
+        return self._requirements(ngpus=4)
 
 
 def get_imported_particles_uid(list_dicts):
