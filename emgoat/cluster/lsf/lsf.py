@@ -634,8 +634,20 @@ class Cluster(BaseCluster):
 
 
     # ------------- generate lsf script for job, external use functions ------------------
-    def launch_job(self, job_requirements):
-        pass
+    def launch_job(self, job_file):
+        """
+        this is to launch the job through bsub
+        :param job_requirements: the input job requirement
+        :return:
+        """
+        # we use the queue name from lsf
+        conf = self._config
+        queue_name = conf['queue_name']
+        arg = ['bsub', "-q", queue_name, job_file]
+        output = run_command(arg)
+        jobID = output.split()[1]
+        v = jobID.replace("<", "").replace(">", "")
+        return v
 
     def generate_job_script(self, jobr, output):
         """
@@ -673,4 +685,3 @@ class Cluster(BaseCluster):
                 for cmd in jobr.commands:
                     f.write(f"\n{cmd}\n")
 
-            print(f"File '{output}' created and written successfully.")
