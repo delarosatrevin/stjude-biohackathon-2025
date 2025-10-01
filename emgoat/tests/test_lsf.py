@@ -1,7 +1,9 @@
 
 import pytest
 import os
-from emgoat.cluster import LSFCluster
+import tempfile
+
+from emgoat.cluster.lsf import Cluster as LSFCluster
 from emgoat.cluster import Cluster
 
 
@@ -36,18 +38,20 @@ def test_future_snapshots():
             print("\n")
 
 def test_lsf_script_generation():
-
-    # set the output for testing
-    output = "/tmp/emgoat_testing.lsf"
-    if os.path.exists(output):
-        os.remove(output)
-
     # generate the job reqirment
-    requirement = Cluster.JobRequirements(ncpus=10,ngpus=4,total_memory=100)
-
+    requirement = Cluster.JobRequirements(ncpus=10, ngpus=4, total_memory=100,
+                                          commands=['module load relion/v5.0',
+                                                    'relion_refine testing'])
     # output the lsf cluster
     lsf = LSFCluster()
-    lsf.generate_job_script(requirement, output)
+    # set the output for testing
+    with tempfile.NamedTemporaryFile() as tmpfile:
+        os.remove(tmpfile.name)
+        lsf.generate_job_script(requirement, tmpfile.name)
+
+        with open(tmpfile.name) as f:
+            for line in f:
+                print(line.rstrip())
 
 def test_lsf_overview():
     lsf = LSFCluster()
