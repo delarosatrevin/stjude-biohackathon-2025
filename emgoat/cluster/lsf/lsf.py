@@ -634,8 +634,15 @@ class Cluster(BaseCluster):
 
 
     # ------------- generate lsf script for job, external use functions ------------------
-    def launch_job(self, job_requirements):
-        pass
+    def launch_job(self, job_file):
+        """
+        this is to launch the job through bsub
+        :param job_requirements: the input job requirement
+        :return:
+        """
+        arg = ['bsub', job_file]
+        output = run_command(arg)
+        print(output)
 
     def generate_job_script(self, jobr, output):
         """

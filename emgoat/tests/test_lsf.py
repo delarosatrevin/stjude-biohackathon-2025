@@ -48,6 +48,7 @@ def test_lsf_script_generation():
     with tempfile.NamedTemporaryFile() as tmpfile:
         os.remove(tmpfile.name)
         lsf.generate_job_script(requirement, tmpfile.name)
+        lsf.launch_job(tmpfile.name)
 
         with open(tmpfile.name) as f:
             for line in f:
