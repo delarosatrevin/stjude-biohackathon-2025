@@ -645,7 +645,6 @@ class Cluster(BaseCluster):
         queue_name = conf['queue_name']
         arg = ['bsub', "-q", queue_name, job_file]
         output = run_command(arg)
-        print(output)
         jobID = output.split()[1]
         v = jobID.replace("<", "").replace(">", "")
         return v
@@ -686,4 +685,3 @@ class Cluster(BaseCluster):
                 for cmd in jobr.commands:
                     f.write(f"\n{cmd}\n")
 
-            print(f"File '{output}' created and written successfully.")
