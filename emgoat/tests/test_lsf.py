@@ -69,3 +69,12 @@ def test_lsf_job_availability():
         print("Checking the case: {0} there are {1} available "
               "slots\n".format(key, value))
 
+
+def test_lsf_future_snapshots_availability():
+    lsf = LSFCluster()
+    requirement = Cluster.JobRequirements(ncpus=10, ngpus=4, total_memory=100)
+    result = lsf.get_job_estimation_landing(requirement)
+    for key, value in result.items():
+        print("Checking the time: {0} that there are number of slots {1} available "
+              "slots\n".format(key, value))
+

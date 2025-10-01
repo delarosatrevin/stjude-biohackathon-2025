@@ -371,6 +371,69 @@ class Cluster(BaseCluster):
             total_gpu_num += node.ngpus
         return total_gpu_num
 
+    def _get_number_similar_pending_jobs(self, requirement):
+        """
+        let's see how many jobs has similar resources requirement
+
+        similar resource requirement means it use same, or smaller resources
+        comparing with the input job requirement
+
+        :param requirement: the job requirement
+        :return: number of similar jobs
+        """
+        # check the similar jobs in pending list
+        # get the job resources requirement
+        ncpus = requirement.ncpus
+        ngpus = requirement.ngpus
+        mem_required = requirement.total_memory
+
+        # get current pending job list
+        pending_jobs = self._get_pending_job_list()
+
+        # let's see how many jobs has similar resources requirement
+        # similar resource requirement means it use same, or smaller resources
+        # comparing with this job
+        n_similar_jobs = 0
+        for job in pending_jobs:
+            if job.cpu_used <= ncpus and job.gpu_used <= ngpus and job.memory_used <= mem_required:
+                n_similar_jobs += 1
+
+        # return the number
+        return n_similar_jobs
+
+    def _checking_job_availability_in_the_node_list(self, nodes_list, requirement):
+        """
+        for the job requirement, let's check how many available slots in the input
+        node list. The node list can be reflecting current usage, or it's in the future
+        snapshot view (see the self.snapshots_node_list)
+        :param nodes_list: the input node list, the data is read only
+        :param requirement: job requirement
+        :return: number of available slots to fit this job requirement
+        """
+        gpu_select  = requirement.ngpus
+        cpu_select  = requirement.ncpus
+        mem_select  = requirement.total_memory
+        avail_slots = 0
+        for node in nodes_list:
+            mem_remain = node.get_memory_unused()
+            cpus_remain = node.get_cpus_unused()
+            gpus_remain = node.get_gpus_unused()
+            if gpu_select > 0:
+                if mem_remain >= mem_select and cpus_remain >= cpu_select and gpus_remain >=gpu_select:
+                    mem_avail = int(mem_remain/mem_select)
+                    cpu_avail = int(cpus_remain/cpu_select)
+                    gpu_avail = int(gpus_remain/gpu_select)
+                    avail_slots += min(mem_avail, cpu_avail, gpu_avail)
+            else:
+                if mem_remain >= mem_select and cpus_remain >= cpu_select:
+                    mem_avail = int(mem_remain/mem_select)
+                    cpu_avail = int(cpus_remain/cpu_select)
+                    avail_slots += min(mem_avail, cpu_avail)
+
+        # return results
+        return avail_slots
+
+
     # ------------- job snapshots related internal functions ------------------
     def _generate_job_snapshots(self):
         """
@@ -479,7 +542,7 @@ class Cluster(BaseCluster):
         # return the result
         return result
 
-    # ------------- get the job estimation, external use functions ---------------------
+    # ------------- get the job availability check, external use functions ---------------------
     def get_job_availability_check(self, requirement):
         """
         for the input job requirement, let's return the availability for the job
@@ -527,30 +590,44 @@ class Cluster(BaseCluster):
             # update the result
             result["mem"] = mem_availability
 
-        # combination of memory, gpus and cpu cores
-        # see whether we have available slots currently in cluster
-        avail_slots = 0
-        for node in self.nodes_list:
-            mem_remain = node.get_memory_unused()
-            cpus_remain = node.get_cpus_unused()
-            gpus_remain = node.get_gpus_unused()
-            if gpu_select > 0:
-                if mem_remain >= mem_select and cpus_remain >= cpu_select and gpus_remain >=gpu_select:
-                    mem_avail = int(mem_remain/mem_select)
-                    cpu_avail = int(cpus_remain/cpu_select)
-                    gpu_avail = int(gpus_remain/gpu_select)
-                    avail_slots += min(mem_avail, cpu_avail, gpu_avail)
-            else:
-                if mem_remain >= mem_select and cpus_remain >= cpu_select:
-                    mem_avail = int(mem_remain/mem_select)
-                    cpu_avail = int(cpus_remain/cpu_select)
-                    avail_slots += min(mem_avail, cpu_avail)
+        # update the result for checking the availability for current job
+        result['job'] = self._checking_job_availability_in_the_node_list(self.nodes_list,
+                                                                         requirement)
 
         # update the result
-        result['job'] = avail_slots
+        result['similar'] = self._get_number_similar_pending_jobs(requirement)
 
         # return the result
         return result
+
+    # ------------- get the job estimation, external use functions ---------------------
+    def get_job_estimation_landing(self, requirement):
+        """
+        for the input job requirement, let's return the estimated landing time for the
+        job, this will consider other pending jobs, too
+        """
+        # get number of similar jobs in pending list
+        n_similar = self._get_number_similar_pending_jobs(requirement)
+
+        # availability slots
+        avail_slots = {}
+        pos = 0
+        for snapshot in self.snapshots_node_list:
+
+            # get the time data
+            begin_time = self.time_interval_list[pos]
+
+            # checking the available slots
+            avail_slot_num = self._checking_job_availability_in_the_node_list(snapshot,requirement)
+            if avail_slot_num > n_similar:
+                avail_slots[begin_time] = avail_slot_num
+
+            # increase the pos
+            pos = pos + 1
+
+        # finally return the result
+        return avail_slots
+
 
     # ------------- generate lsf script for job, external use functions ------------------
     def launch_job(self, job_requirements):
