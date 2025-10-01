@@ -645,10 +645,10 @@ class Cluster(BaseCluster):
         queue_name = conf['queue_name']
         arg = ['bsub', "-q", queue_name, job_file]
         output = run_command(arg)
+        print(output)
         jobID = output.split()[1]
-        jobID.replace("<", "")
-        jobID.replace(">", "")
-        return jobID
+        v = jobID.replace("<", "").replace(">", "")
+        return v
 
     def generate_job_script(self, jobr, output):
         """
