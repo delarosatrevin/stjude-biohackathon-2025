@@ -28,15 +28,19 @@ class EMGoat:
         self.cmd = self.process_module.Command(self.template_module)
 
     def launch_job(self):
-        from emtools.utils import Path
-
+        from emtools.utils import Path, Color
 
         cluster = self.cluster_module.Cluster()
-        script_file = Path.replaceBaseExt(self.template_file,
-                                          f'{cluster._name}_job.sh')
+        script_file = Path.replaceExt(self.template_file,
+                                      f'_{cluster._name}_job.sh')
         jobr = self.cmd.get_job_requirements()
+        print(">>> Job requirements: ")
         print(jobr)
+
         print("Writing job file: ", script_file)
         cluster.generate_job_script(jobr, script_file)
+        cmd = f"bsub < {script_file}"
+        print(Color.green(cmd))
+        os.system(cmd)
 
 

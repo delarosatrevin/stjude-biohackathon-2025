@@ -42,6 +42,13 @@ class Command:
     def _rule_relion_run_motioncorr(self):
         if '--use_own' in self.args:
             jobr = self._requirements(ncpus=64)
+            mpis = 8
+            self.args['--j'] = 8
+            args = self.args.toLine()
+            jobr.commands = [
+                "module load relion/v5.0",
+                f"mpirun -n {mpis} `which {self.program_name}` {args}"
+            ]
         else:
             jobr = self._requirements(ngpus=4)
         return jobr
