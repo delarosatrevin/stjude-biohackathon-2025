@@ -607,12 +607,6 @@ class LSFCluster(Cluster):
         for the input job requirement, let's return the estimated landing time for the
         job, this will consider other pending jobs, too
         """
-
-        # get the job resources requirement
-        ncpus = requirement.ncpus
-        ngpus = requirement.ngpus
-        mem_required = requirement.total_memory
-
         # get number of similar jobs in pending list
         n_similar = self._get_number_similar_pending_jobs(requirement)
 
