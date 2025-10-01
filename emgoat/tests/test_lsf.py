@@ -63,11 +63,14 @@ def test_lsf_overview():
 
 def test_lsf_job_availability():
     lsf = LSFCluster()
-    requirement = Cluster.JobRequirements(ncpus=10, ngpus=4, total_memory=100)
-    result = lsf.get_job_availability_check(requirement)
-    for key, value in result.items():
-        print("Checking the case: {0} there are {1} available "
-              "slots\n".format(key, value))
+    for gpus in [1, 2, 4, 8]:
+        jobr = Cluster.JobRequirements(ncpus=gpus*10,
+                                       ngpus=gpus,
+                                       total_memory=gpus*50)
+        result = lsf.get_job_availability_check(jobr)
+        print(f">>>> gpus {gpus}: ")
+        for key, value in result.items():
+            print(f"    {key}: {value}")
 
 
 def test_lsf_future_snapshots_availability():
