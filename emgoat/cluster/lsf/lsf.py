@@ -640,9 +640,15 @@ class Cluster(BaseCluster):
         :param job_requirements: the input job requirement
         :return:
         """
-        arg = ['bsub', job_file]
+        # we use the queue name from lsf
+        conf = self._config
+        queue_name = conf['queue_name']
+        arg = ['bsub', "-q", queue_name, job_file]
         output = run_command(arg)
-        print(output)
+        jobID = output.split()[1]
+        jobID.replace("<", "")
+        jobID.replace(">", "")
+        return jobID
 
     def generate_job_script(self, jobr, output):
         """
