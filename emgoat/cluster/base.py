@@ -199,6 +199,10 @@ class Cluster(ABC):
     def get_job_availability_check(self, requirement):
         pass
 
+    @abstractmethod
+    def get_job_estimation_landing(self, requirement):
+        pass
+
     def update_node_with_job_info(self, node_list, job_list):
         """
         this function will further update the node with the job information
