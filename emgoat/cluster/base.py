@@ -180,7 +180,7 @@ class Cluster(ABC):
         pass
 
     @abstractmethod
-    def launch_job(self, job_requirements):
+    def launch_job(self, job_file):
         pass
 
     @abstractmethod
