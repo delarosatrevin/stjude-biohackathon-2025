@@ -30,6 +30,8 @@ def test_lsf_host_output_parse():
     for r in result:
         print(r)
     output = run_lshosts_get_cpu_info(node_list)
+    print("raw output for the lshosts command")
+    print(output)
     parse_lshosts_cpu_infor(output, result)
     print("after parsing the lshosts output")
     for r in result:
