@@ -8,9 +8,9 @@ from emgoat.util import Config, run_command, GPU_TYPE
 from emgoat.cluster.lsf.lsf_hosts import *
 
 
-def test_parsing_bhost_output():
+def test_lsf_host_output_parse():
     """
-    test functions related to bhost command running and testing
+    test functions related to bhosts/lshosts command running and testing
     """
     LSF_COFNIG = Config(emgoat.config['lsf'])
     output = run_bhosts_get_gpu_info()
@@ -26,9 +26,15 @@ def test_parsing_bhost_output():
     for r in result:
         print(r)
     parse_bhost_gpu_infor(output, result)
-    print("after parsing the bhost output")
+    print("after parsing the bhosts output")
     for r in result:
         print(r)
-        
+    output = run_lshosts_get_cpu_info(node_list)
+    parse_lshosts_cpu_infor(output, result)
+    print("after parsing the lshosts output")
+    for r in result:
+        print(r)
+
+
 
 
