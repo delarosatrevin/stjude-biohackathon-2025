@@ -37,6 +37,14 @@ def test_lsf_host_output_parse():
     for r in result:
         print(r)
 
+    # now let's generate the result json file
+    generate_json_nodes_info(result)
+
+    # now read it out
+    result2 = read_json_nodes_info()
+    print("This is the result reading from the json file, should be same with previous one")
+    for r in result2:
+        print(r)
 
 
 
