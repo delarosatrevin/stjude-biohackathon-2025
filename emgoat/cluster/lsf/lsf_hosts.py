@@ -297,9 +297,9 @@ def compare_nodes_infor_text_file_time():
     global LSF_COFNIG
 
     # get the data file name
-    file_name = LSF_COFNIG.__getitem__('lsf_node_data_file_name')
-    path_name = LSF_COFNIG.__getitem__('lsf_data_output_dir')
-    time = LSF_COFNIG.__getitem__('lsf_nodes_data_update_time')
+    file_name = LSF_COFNIG.__getitem__('node_data_file_name')
+    path_name = LSF_COFNIG.__getitem__('data_output_dir')
+    time = LSF_COFNIG.__getitem__('nodes_data_update_time')
     fname = path_name + "/" + file_name
 
     # firstly check whether the file exists?
@@ -324,8 +324,9 @@ def generate_json_nodes_info(result):
     global LSF_COFNIG
 
     # get the data file name
-    file_name = LSF_COFNIG.__getitem__('lsf_node_data_file_name')
-    path_name = LSF_COFNIG.__getitem__('lsf_data_output_dir')
+    print(LSF_COFNIG._config)
+    file_name = LSF_COFNIG.__getitem__('node_data_file_name')
+    path_name = LSF_COFNIG.__getitem__('data_output_dir')
     fname = path_name + "/" + file_name
 
     # now write the data into the file
@@ -340,8 +341,8 @@ def read_json_nodes_info():
     global LSF_COFNIG
 
     # get the data file name
-    file_name = LSF_COFNIG.__getitem__('lsf_node_data_file_name')
-    path_name = LSF_COFNIG.__getitem__('lsf_data_output_dir')
+    file_name = LSF_COFNIG.__getitem__('node_data_file_name')
+    path_name = LSF_COFNIG.__getitem__('data_output_dir')
     fname = path_name + "/" + file_name
 
     # now load in the data
