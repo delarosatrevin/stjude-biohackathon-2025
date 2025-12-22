@@ -112,6 +112,8 @@ def parse_lshosts_cpu_infor(output, result):
     nodexxx      X86_64  Opteron8  60.0    64 1003.3G  15.9G    Yes (rhel8 hp hp4 mem_1t xl225n epyc rome amd)
     nodeyyy      X86_64  Opteron8  60.0    64 1003.3G  15.9G    Yes (rhel8 hp hp4 mem_1t xl225n epyc rome amd)
 
+    sometimes the cpu and memory is none (shown as "-") in the output, then in this case we will get rid of this node
+
     the result is like below:
     [node1_infor, node2_infor, ....]
 
@@ -139,6 +141,10 @@ def parse_lshosts_cpu_infor(output, result):
                 # values
                 ncpus = infor[4]
                 mem = infor[5]
+
+                # ncpus should be a number, if not we will skip this result
+                if not is_str_integer(ncpus):
+                    continue
 
                 # convert memory
                 # memory should be only in unit of G or T
