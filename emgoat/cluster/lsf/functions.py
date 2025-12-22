@@ -134,7 +134,7 @@ def get_hostnames_from_bjobs_output(input):
     """
     get host names from the bjobs output
     :param input: input host name string, from bjobs output
-    :return:  the host name
+    :return:  the host names seperated by space
     """
     hostnames = []
 
@@ -149,4 +149,4 @@ def get_hostnames_from_bjobs_output(input):
                 #raise RuntimeError(f"Invalid string for paring to get hostname: {input}")
                 hostnames.append(p)
 
-    return hostnames
+    return " ".join(hostnames)

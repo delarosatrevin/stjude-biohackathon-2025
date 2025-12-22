@@ -31,6 +31,11 @@ def parse_bjobs_output_for_alljobs(output):
     :param output: the output data in json format in string
     :return: a list of dict that contains the job name and user names etc. information
     """
+    global LSF_COFNIG
+
+    # time format
+    time_format = LSF_COFNIG['lsf']['time_format']
+
     # load in the raw output to json format output for further parsing
     data = json.loads(output)
 
@@ -85,15 +90,16 @@ def parse_bjobs_output_for_alljobs(output):
         #         "It seems the job used more than one node, currently we do not know how to get the data")
 
         # now we have everything, building the dict
+        # further change the datetime into string
         job_infor = {
             'jobid': jobid,
             'job_name': job_name,
-            'submit_time': submit_time,
+            'submit_time': submit_time.strftime(time_format),
             'state': status,
             'general_state': get_job_general_status(status),
             'pending_time': pending_time,
             'job_remaining_time': remaining_time,
-            'start_time': start_time,
+            'start_time': start_time.strftime(time_format),
             'used_time': running_time,
             'cpu_used': ncpus_request,
             'gpu_used': gpu_used,
