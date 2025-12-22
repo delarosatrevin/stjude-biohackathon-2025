@@ -1,7 +1,7 @@
 import pytest
 from emgoat.cluster.lsf.lsf_jobs import *
 
-def testing_lsf_jobs()
+def testing_lsf_jobs():
     """
     testing teh lsf job data generation
     """
