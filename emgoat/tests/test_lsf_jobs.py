@@ -12,7 +12,7 @@ def testing_lsf_jobs():
         print(r)
 
     # write the result and read it again
-    generate_json_jobs_info()
+    generate_json_jobs_info(job_infor)
     result = read_json_jobs_info()
     print("This is the output from reading bjobs data file, should be same with above results")
     for r in result:

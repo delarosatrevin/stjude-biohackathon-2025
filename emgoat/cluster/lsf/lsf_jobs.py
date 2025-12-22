@@ -121,8 +121,8 @@ def generate_json_jobs_info(result):
     fname = path_name + "/" + file_name
 
     # now write the data into the file
-    with open(fname, 'w') as node_infor:
-        json.dump(result, node_infor, indent=4)
+    with open(fname, 'w') as job_infor:
+        json.dump(result, job_infor, indent=4)
 
 
 def read_json_jobs_info():
