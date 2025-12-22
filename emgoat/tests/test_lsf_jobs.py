@@ -6,8 +6,10 @@ def testing_lsf_jobs():
     testing teh lsf job data generation
     """
     output = run_bjobs_get_alljobs()
-    job_infor = parse_bjobs_output_for_alljobs(output)
     print("this is the raw output from bjobs command")
+    print(output)
+    job_infor = parse_bjobs_output_for_alljobs(output)
+    print("this is the output from bjobs command")
     for r in job_infor:
         print(r)
 
