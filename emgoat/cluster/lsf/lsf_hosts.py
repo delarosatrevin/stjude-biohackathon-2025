@@ -4,18 +4,17 @@
 #
 import os
 import json
-import emgoat
-from emgoat.util import Config, run_command, GPU_TYPE
+from emgoat.config import get_config
+from emgoat.util import run_command, GPU_TYPE
 from emgoat.util import is_str_float, is_str_integer
 from emgoat.util import convert_float_to_integer
 from .functions import *
 from datetime import datetime, timedelta
 
 #
-# constants that points to LSF configuration
+# constants that from configuration
 #
-LSF_COFNIG = Config(emgoat.config['lsf'])
-
+LSF_COFNIG = get_config()
 
 def run_bhosts_get_gpu_info():
     """
@@ -28,8 +27,8 @@ def run_bhosts_get_gpu_info():
 
     # get the argument list
     # we will run from current node
-    arg = LSF_COFNIG.get_list('bhosts_gpu_info')
-    arg.append(LSF_COFNIG.__getitem__('bhosts_gpu_node_group_name'))
+    arg = LSF_COFNIG['lsf']['bhosts_gpu_info'].split()
+    arg.append(LSF_COFNIG['lsf']['bhosts_gpu_node_group_name'])
     return run_command(arg)
 
 
@@ -297,9 +296,9 @@ def compare_nodes_infor_text_file_time():
     global LSF_COFNIG
 
     # get the data file name
-    file_name = LSF_COFNIG.__getitem__('node_data_file_name')
-    path_name = LSF_COFNIG.__getitem__('data_output_dir')
-    time = LSF_COFNIG.__getitem__('nodes_data_update_time')
+    file_name = LSF_COFNIG['lsf']['node_data_file_name']
+    path_name = LSF_COFNIG['lsf']['data_output_dir']
+    time = LSF_COFNIG['lsf']['nodes_data_update_time']
     fname = path_name + "/" + file_name
 
     # firstly check whether the file exists?
@@ -324,9 +323,8 @@ def generate_json_nodes_info(result):
     global LSF_COFNIG
 
     # get the data file name
-    print(LSF_COFNIG._config)
-    file_name = LSF_COFNIG.__getitem__('node_data_file_name')
-    path_name = LSF_COFNIG.__getitem__('data_output_dir')
+    file_name = LSF_COFNIG['lsf']['node_data_file_name']
+    path_name = LSF_COFNIG['lsf']['data_output_dir']
     fname = path_name + "/" + file_name
 
     # now write the data into the file
@@ -341,8 +339,8 @@ def read_json_nodes_info():
     global LSF_COFNIG
 
     # get the data file name
-    file_name = LSF_COFNIG.__getitem__('node_data_file_name')
-    path_name = LSF_COFNIG.__getitem__('data_output_dir')
+    file_name = LSF_COFNIG['lsf']['node_data_file_name']
+    path_name = LSF_COFNIG['lsf']['data_output_dir']
     fname = path_name + "/" + file_name
 
     # now load in the data
@@ -375,7 +373,7 @@ def get_nodes_info():
     # run the bhost command first
     output = run_bhosts_get_gpu_info()
     gpu_node_list = get_nodes_name_from_bhost_output(output)
-    cpu_node_list = LSF_COFNIG.get_list('lshosts_cpu_node_list')
+    cpu_node_list = LSF_COFNIG['lsf']['lshosts_cpu_node_list'].split()
     node_list = gpu_node_list + cpu_node_list
     result = form_nodes_infor_list_from_node_names(node_list)
 
