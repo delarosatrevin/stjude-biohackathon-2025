@@ -175,3 +175,23 @@ def compare_job_infor_text_file_time():
         return False
     else:
         return True
+
+
+def set_job_info():
+    """
+    this is the driver function for the lsf_jobs. It will return the job list, each job
+    is a dict as described in parse_bjobs_output_for_alljobs
+    """
+
+    # whether we have the file
+    if compare_job_infor_text_file_time():
+        data = read_json_jobs_info()
+        return data
+
+    # now let's generate the file
+    output = run_bjobs_get_alljobs()
+    jobs_list = parse_bjobs_output_for_alljobs(output)
+
+    # save the data
+    generate_json_jobs_info(jobs_list)
+    return jobs_list
