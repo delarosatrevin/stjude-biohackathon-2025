@@ -195,3 +195,4 @@ def set_job_info():
     # save the data
     generate_json_jobs_info(jobs_list)
     return jobs_list
+

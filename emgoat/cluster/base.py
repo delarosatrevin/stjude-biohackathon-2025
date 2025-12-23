@@ -15,23 +15,40 @@ class Cluster(ABC):
     _name = None  # Should be defined in subclasses
 
     class Node:
-        """ Structure to store basic information about cluster nodes. """
-        def __init__(self, name, gpu_type):
+        """
+        Structure to store basic information about cluster nodes.
+
+        All of the information are complete when passing into this constructor
+        """
+
+        def __init__(self, name, gpu_type, ngpus, ncpus, total_mem_in_gb):
             """
-            as the initial setup, we capture the name and gpu information from the bhost output
-            :param gpu_type: gpu type
+            as the initial setup, all of the input data are corresponding to complete information
+            regarding to the node
+
+            the jobs related information will be initialized later (njobs, cores_in_use etc.)
             """
             self.name = name
             self.gpu_type = gpu_type
-            self.ngpus = 0
-            self.ncpus = 0
-            self.total_mem_in_gb = 0
+            self.ngpus = ngpus
+            self.ncpus = ncpus
+            self.total_mem_in_gb = total_mem_in_gb
 
             # the data below are related to the resources used on the node
             self.njobs = 0
             self.gpus_in_use = 0
             self.cores_in_use = 0
             self.memory_in_use = 0
+
+
+        def update_jobs_infor(self, gpus_in_use, cores_in_use, memory_in_use):
+            """
+            update the corresponding data from one job
+            """
+            self.njobs += 1
+            self.gpus_in_use += gpus_in_use
+            self.cores_in_use += cores_in_use
+            self.memory_in_use += memory_in_use
 
         def __str__(self):
             return (f"Node name={self.name}, \n"
@@ -86,7 +103,7 @@ class Cluster(ABC):
 
             cpu/gpu used: how many cores/gpus used for the job
 
-            compute nodes are the nodes that the job are submitted onto.
+            compute nodes are the nodes that the job are submitted onto, it's a list of string
             """
 
             self.jobid = jobid
@@ -129,16 +146,30 @@ class Cluster(ABC):
             initialization
             :param name: the account name
             """
-            self.account_name = name
-            self.njobs = 0
+            self.account_name   = name
+            self.n_running_jobs = 0
+            self.n_pending_jobs = 0
             self.ngpus = 0
             self.ncpus = 0
 
         def __str__(self):
             return (f"account name={self.account_name}, \n"
-                f"number of jobs={self.njobs}, \n"
+                f"number of running jobs={self.n_running_jobs}, \n"
+                f"number of pending jobs={self.n_pending_jobs}, \n"
                 f"ngpus={self.ngpus}, \n"
                 f"ncpus={self.ncpus} ")
+
+        def update_values(self, ncores_used, ngpus_used, job_status):
+            """
+            depending on the job status, let's update the values
+            """
+            if job_status == JOB_STATUS_PD:
+                self.n_pending_jobs += 1
+            else:
+                self.n_running_jobs += 1
+                self.ngpus += ngpus_used
+                self.ncpus += ncores_used
+
 
     class JobRequirements:
         """ Simple structure to store requirements for a given job. """
@@ -163,47 +194,53 @@ class Cluster(ABC):
                     f"gpu_type: {self.gpu_type}\n"
                     f"wall_time: {self.wall_time}\n")
 
+    ################################################################################
+    ##### here we define abstraction functions                                 #####
+    ################################################################################
+
     @abstractmethod
     def get_nodes_info(self):
         pass
+
 
     @abstractmethod
     def get_jobs_info(self):
         pass
 
+
     @abstractmethod
     def get_accounts_info(self):
         pass
 
-    @abstractmethod
-    def generate_job_script(self, requirements, output):
-        pass
 
-    @abstractmethod
-    def launch_job(self, job_file):
-        pass
+    ################################################################################
+    ##### here we define functions that working for all of objects (LSF/Slurm) #####
+    ################################################################################
+    @staticmethod
+    def get_pending_job_list(jobs_list):
+        """
+        this function returns the pending job list from the input list of Jobs
 
-    @abstractmethod
-    def get_time_interval_for_snapshots(self):
-        pass
+        :return: a new job list only has the pending jobs
+        """
+        new_list = [x for x in jobs_list if x.general_state == JOB_STATUS_PD]
+        return new_list
 
-    @abstractmethod
-    def get_data_for_snapshots(self):
-        pass
 
-    @abstractmethod
-    def get_cluster_overview(self):
-        pass
+    @staticmethod
+    def get_total_gpu_num(nodes_list):
+        """
+        for the current node list, get the total number of gpu cards
+        :return: the total number of gpu cards
+        """
+        total_gpu_num = 0
+        for node in nodes_list:
+            total_gpu_num += node.ngpus
+        return total_gpu_num
 
-    @abstractmethod
-    def get_job_availability_check(self, requirement):
-        pass
 
-    @abstractmethod
-    def get_job_estimation_landing(self, requirement):
-        pass
-
-    def update_node_with_job_info(self, node_list, job_list):
+    @staticmethod
+    def update_node_with_job_info(node_list, job_list):
         """
         this function will further update the node with the job information
         """
@@ -240,7 +277,55 @@ class Cluster(ABC):
                     else:
                         raise RuntimeError("the memory usage per node for the job should be "
                                            "integer: ".format(job.memory_used/nnodes))
-                    node.njobs += 1
-                    node.gpus_in_use += ngpus_per_node
-                    node.cores_in_use += ncpus_per_node
-                    node.memory_in_use += mem_per_node
+                    node.update_jobs_infor(gpus_in_use=ngpus_per_node, cores_in_use=ncpus_per_node,
+                                           memory_in_use=mem_per_node)
+
+
+    def form_accounts_infor(self, jobs_list):
+        """
+        forming the account list based on the job list data
+        """
+
+        # firstly form the account list with account name
+        account_name_list = []
+        for x in jobs_list:
+            if x.account_name not in account_name_list:
+                account_name_list.append(x.account_name)
+
+        # now forms the account list with empty values
+        account_list = [self.Account(x) for x in account_name_list]
+
+        # now loop over the job list
+        for acc in account_list:
+            for job in jobs_list:
+                if job.account_name == acc.account_name:
+                    ncores_used = job.cpu_used
+                    ngpus_used  = job.gpu_used
+                    job_status  = job.general_state
+                    acc.update_values(ncores_used, ngpus_used, job_status)
+
+        # finally return
+        return account_list
+
+
+    def get_cluster_overview(self, nodes_list):
+        """
+        this function returns a cluster overview
+        :return: a dict that describes the availability of gpu resources
+        """
+        total_gpu_num = self.get_total_gpu_num(nodes_list)
+        gpu_selections = [1, 2, 4, 6, 8]
+        result = {}
+        for gpu_select in gpu_selections:
+            available_slots = 0
+            for node in nodes_list:
+                gpus_remain = node.get_gpus_unused()
+                if gpus_remain >= gpu_select:
+                    available_slots += int(gpus_remain/gpu_select)
+
+            # update the result
+            percentage = available_slots/total_gpu_num
+            result[gpu_select] = (available_slots, percentage)
+
+        # return the result
+        return result
