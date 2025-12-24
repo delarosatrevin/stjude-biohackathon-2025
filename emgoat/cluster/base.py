@@ -69,8 +69,11 @@ class Cluster(ABC):
                 f"mem={self.total_mem_in_gb}, \n"
                 f"number of jobs={self.njobs}, \n"
                 f"number of gpus in use={self.gpus_in_use}, \n"
+                f"number of gpus not in use={self.get_gpus_unused()}, \n"
                 f"number of cores in use={self.cores_in_use}, \n"
-                f"current memory usage={self.memory_in_use} ")
+                f"number of cores not in use={self.get_cpus_unused()}, \n"
+                f"current memory usage={self.memory_in_use} \n"
+                f"current memory not in use={self.get_memory_unused()}")
 
         def get_gpus_unused(self):
             """
