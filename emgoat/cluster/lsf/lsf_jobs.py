@@ -160,7 +160,7 @@ def compare_job_infor_text_file_time():
     # get the data file name
     file_name = LSF_COFNIG['lsf']['jobs_data_file_name']
     path_name = LSF_COFNIG['lsf']['data_output_dir']
-    time = LSF_COFNIG['lsf']['jobs_data_update_time']
+    time = int(LSF_COFNIG['lsf']['jobs_data_update_time'])
     fname = path_name + "/" + file_name
 
     # firstly check whether the file exists?
