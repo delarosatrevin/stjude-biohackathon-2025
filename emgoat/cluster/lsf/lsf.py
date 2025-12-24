@@ -1,8 +1,8 @@
 
 import emgoat
 from emgoat.util import Config
-from lsf_jobs import *
-from lsf_hosts import *
+from emgoat.cluster.lsf.lsf_jobs import *
+from emgoat.cluster.lsf.lsf_hosts import *
 from ..base import Cluster as BaseCluster
 from datetime import datetime
 
