@@ -27,12 +27,23 @@ class Cluster(ABC):
             regarding to the node
 
             the jobs related information will be initialized later (njobs, cores_in_use etc.)
+
+            sometimes because the default data can be < 0, therefore we check whether the data is > 0
             """
             self.name = name
             self.gpu_type = gpu_type
-            self.ngpus = ngpus
-            self.ncpus = ncpus
-            self.total_mem_in_gb = total_mem_in_gb
+            if ngpus > 0:
+                self.ngpus = ngpus
+            else:
+                self.ngpus = 0
+            if ncpus > 0:
+                self.ncpus = ncpus
+            else:
+                self.ncpus = 0
+            if total_mem_in_gb > 0:
+                self.total_mem_in_gb = total_mem_in_gb
+            else:
+                self.total_mem_in_gb = 0
 
             # the data below are related to the resources used on the node
             self.njobs = 0
@@ -242,6 +253,18 @@ class Cluster(ABC):
         for node in nodes_list:
             total_gpu_num += node.ngpus
         return total_gpu_num
+
+
+    def get_total_unused_gpu_num(self, nodes_list):
+        """
+        for the current node list, get the total number of unused gpu cards and it's percentage
+        :return: the total number of unused gpu cards, and it's percentage
+        """
+        total_gpu_num = self.get_total_gpu_num(nodes_list)
+        total_unused_gpu = 0
+        for node in nodes_list:
+            total_unused_gpu += node.get_gpus_unused()
+        return total_unused_gpu, total_gpu_num/total_gpu_num
 
 
     @staticmethod
