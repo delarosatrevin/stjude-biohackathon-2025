@@ -264,7 +264,7 @@ class Cluster(ABC):
         total_unused_gpu = 0
         for node in nodes_list:
             total_unused_gpu += node.get_gpus_unused()
-        return total_unused_gpu, total_gpu_num/total_gpu_num
+        return total_unused_gpu, float(total_gpu_num/total_gpu_num)
 
 
     @staticmethod
@@ -348,7 +348,7 @@ class Cluster(ABC):
                     available_slots += int(gpus_remain/gpu_select)
 
             # update the result
-            percentage = available_slots/total_gpu_num
+            percentage = float(available_slots/total_gpu_num)
             result[gpu_select] = (available_slots, percentage)
 
         # return the result
