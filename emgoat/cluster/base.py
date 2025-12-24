@@ -252,33 +252,27 @@ class Cluster(ABC):
             # get the job landing on the node
             for job in job_list:
 
+                # update the node data
+                nodes = job.compute_nodes
+                if node_name not in nodes:
+                    continue
+
                 # if the job is pending status, skip it
                 if job.general_state == JOB_STATUS_PD:
                     continue
 
-                # update the node data
-                nodes = job.compute_nodes
-                if node_name in nodes:
-                    # usually the resources used are distributed evenly among
-                    # the nodes
-                    nnodes = len(nodes)
-                    if (job.gpu_used/nnodes).is_integer():
-                        ngpus_per_node = int(job.gpu_used/nnodes)
-                    else:
-                        raise RuntimeError("the number of gpus per node for the job should be "
-                                           "integer: ".format(job.gpu_used/nnodes))
-                    if (job.cpu_used/nnodes).is_integer():
-                        ncpus_per_node = int(job.cpu_used/nnodes)
-                    else:
-                        raise RuntimeError("the number of cpus per node for the job should be "
-                                           "integer: ".format(job.cpu_used/nnodes))
-                    if (job.memory_used/nnodes).is_integer():
-                        mem_per_node = int(job.memory_used/nnodes)
-                    else:
-                        raise RuntimeError("the memory usage per node for the job should be "
-                                           "integer: ".format(job.memory_used/nnodes))
-                    node.update_jobs_infor(gpus_in_use=ngpus_per_node, cores_in_use=ncpus_per_node,
-                                           memory_in_use=mem_per_node)
+                # test whether nodes is list >= 1
+                nnodes = len(nodes)
+                if nnodes == 0:
+                    print(job)
+                    raise RuntimeError("the number of nodes for the above job is 0 in update_node_with_job_info")
+
+                # update data
+                # all of data below should be good for direct compute
+                ngpus_per_node = int(job.gpu_used / nnodes)
+                ncpus_per_node = int(job.cpu_used / nnodes)
+                mem_per_node   = int(job.memory_used / nnodes)
+                node.update_jobs_infor(gpus_in_use=ngpus_per_node, cores_in_use=ncpus_per_node, memory_in_use=mem_per_node)
 
 
     def form_accounts_infor(self, jobs_list):
