@@ -151,15 +151,18 @@ class Cluster(ABC):
             self.n_pending_jobs = 0
             self.ngpus = 0
             self.ncpus = 0
+            self.nodes_list = []
 
         def __str__(self):
+            nodes_name_list = " ".join(self.nodes_list)
             return (f"account name={self.account_name}, \n"
                 f"number of running jobs={self.n_running_jobs}, \n"
                 f"number of pending jobs={self.n_pending_jobs}, \n"
                 f"ngpus={self.ngpus}, \n"
-                f"ncpus={self.ncpus} ")
+                f"ncpus={self.ncpus} \n"
+                f"compute nodes list= {nodes_name_list}")
 
-        def update_values(self, ncores_used, ngpus_used, job_status):
+        def update_values(self, ncores_used, ngpus_used, job_status, node_name):
             """
             depending on the job status, let's update the values
             """
@@ -169,6 +172,8 @@ class Cluster(ABC):
                 self.n_running_jobs += 1
                 self.ngpus += ngpus_used
                 self.ncpus += ncores_used
+                if node_name not in self.nodes_list:
+                    self.nodes_list.append(node_name)
 
 
     class JobRequirements:
@@ -296,7 +301,9 @@ class Cluster(ABC):
                     ncores_used = job.cpu_used
                     ngpus_used  = job.gpu_used
                     job_status  = job.general_state
-                    acc.update_values(ncores_used, ngpus_used, job_status)
+                    nodes_name  = job.compute_nodes
+                    for node in nodes_name:
+                        acc.update_values(ncores_used, ngpus_used, job_status, node)
 
         # finally return
         return account_list
