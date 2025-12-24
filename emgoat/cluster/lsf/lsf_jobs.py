@@ -149,7 +149,7 @@ def read_json_jobs_info():
     # now return the data
     return data
 
-def compare_job_infor_text_file_time():
+def need_new_infor_text_file_time():
     """
     This function compares the job infor data file time stamp, if it's older than the
     time limit let's return true; that means a new file needed to be generated. If the current
@@ -184,7 +184,7 @@ def set_job_info():
     """
 
     # whether we have the file
-    if compare_job_infor_text_file_time():
+    if not need_new_infor_text_file_time():
         data = read_json_jobs_info()
         return data
 

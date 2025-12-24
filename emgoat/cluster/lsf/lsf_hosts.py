@@ -293,7 +293,7 @@ def parse_bhost_gpu_infor(output, result):
                            "in terms of the gpu in parse_bhost_gpu_infor")
 
 
-def compare_nodes_infor_text_file_time():
+def need_new_nodes_infor_text_file():
     """
     This function compares the nodes infor data file time stamp, if it's older than the
     time limit let's return true; that means a new file needed to be generated. If the current
@@ -372,7 +372,7 @@ def get_nodes_info():
 
     # firstly let's see whether we have the data file and
     # we can read the data from the file
-    if compare_nodes_infor_text_file_time():
+    if not need_new_nodes_infor_text_file():
         data = read_json_nodes_info()
         return data
 
