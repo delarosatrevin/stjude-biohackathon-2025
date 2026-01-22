@@ -89,6 +89,11 @@ def parse_bjobs_output_for_alljobs(output):
         #     raise RuntimeError(
         #         "It seems the job used more than one node, currently we do not know how to get the data")
 
+        # the start time could be None
+        start_time_str = "N/A"
+        if start_time is not None:
+            start_time_str = start_time.strftime(time_format)
+
         # now we have everything, building the dict
         # further change the datetime into string
         job_infor = {
@@ -99,7 +104,7 @@ def parse_bjobs_output_for_alljobs(output):
             'general_state': get_job_general_status(status),
             'pending_time': pending_time,
             'job_remaining_time': remaining_time,
-            'start_time': start_time.strftime(time_format),
+            'start_time': start_time_str,
             'used_time': running_time,
             'cpu_used': ncpus_request,
             'gpu_used': gpu_used,
