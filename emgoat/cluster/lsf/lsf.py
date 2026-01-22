@@ -1,6 +1,7 @@
 
 import emgoat
 from emgoat.util import Config
+from emgoat.util import NOT_AVAILABLE
 from emgoat.cluster.lsf.lsf_jobs import *
 from emgoat.cluster.lsf.lsf_hosts import *
 from ..base import Cluster as BaseCluster
@@ -74,7 +75,10 @@ class Cluster(BaseCluster):
 
             # firstly generate the datetime
             submit = datetime.strptime(job['submit_time'], time_format)
-            start_time = datetime.strptime(job['start_time'], time_format)
+            if job['start_time'] == NOT_AVAILABLE:
+                start_time = None
+            else:
+                start_time = datetime.strptime(job['start_time'], time_format)
 
             # transform the compute nodes into a list
             compute_nodes_list = job['compute_nodes'].split()

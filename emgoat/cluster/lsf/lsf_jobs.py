@@ -4,6 +4,7 @@ This file is to parse the bjobs output from lsf, this is the currently running/p
 import os
 import json
 from emgoat.config import get_config
+from emgoat.util import NOT_AVAILABLE
 from emgoat.util import run_command, get_job_general_status, convert_str_to_integer
 from .functions import *
 from datetime import datetime, timedelta
@@ -90,7 +91,7 @@ def parse_bjobs_output_for_alljobs(output):
         #         "It seems the job used more than one node, currently we do not know how to get the data")
 
         # the start time could be None
-        start_time_str = "N/A"
+        start_time_str = NOT_AVAILABLE
         if start_time is not None:
             start_time_str = start_time.strftime(time_format)
 

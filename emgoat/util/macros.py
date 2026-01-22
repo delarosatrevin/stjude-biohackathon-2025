@@ -47,3 +47,8 @@ GPU_TYPE = ["V100_16G", "V100_32G", "A100_80G"]
 # this value (seconds or minutes)
 ############################
 VERY_BIG_NUMBER = 1000000000
+
+#
+# not available symbol
+#
+NOT_AVAILABLE = "N/A"
