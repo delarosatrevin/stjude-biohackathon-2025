@@ -7,11 +7,6 @@ from emgoat.cluster.lsf.lsf_hosts import *
 from ..base import Cluster as BaseCluster
 from datetime import datetime
 
-#
-# constants that from configuration
-#
-LSF_COFNIG = get_config()
-
 class Cluster(BaseCluster):
     """ Cluster implementation for LSF system. """
     _name = "lsf"
@@ -107,10 +102,9 @@ class Cluster(BaseCluster):
         """
         this function is used to output the results into json format
         """
-        global LSF_COFNIG
-
         # this is the json result file
-        json_result = LSF_COFNIG['lsf']['json_result_path']
+        config = self._config
+        json_result = config['json_result_path']
 
         # set up the result structure
         node_list = self.get_nodes_info()
