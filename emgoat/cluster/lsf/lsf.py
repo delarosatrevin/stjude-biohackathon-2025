@@ -7,6 +7,10 @@ from emgoat.cluster.lsf.lsf_hosts import *
 from ..base import Cluster as BaseCluster
 from datetime import datetime
 
+#
+# constants that from configuration
+#
+LSF_COFNIG = get_config()
 
 class Cluster(BaseCluster):
     """ Cluster implementation for LSF system. """
