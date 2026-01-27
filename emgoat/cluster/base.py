@@ -92,6 +92,24 @@ class Cluster(ABC):
             """
             return self.total_mem_in_gb - self.memory_in_use
 
+        def get_gpus_used(self):
+            """
+            get the gpu card number which is currently used
+            """
+            return self.gpus_in_use
+
+        def get_cpus_used(self):
+            """
+            get the used cpu cores number
+            """
+            return self.cores_in_use
+
+        def get_memory_used(self):
+            """
+            get the used memory level
+            """
+            return self.memory_in_use
+
     class Job:
         """ Structure to store jobs information. """
 
@@ -223,9 +241,9 @@ class Cluster(ABC):
                 self.n_total_gpus += node.ngpus
                 self.n_total_cores += node.ncpus
                 self.n_total_mem_in_gb += node.total_mem_in_gb
-                self.n_used_gpus += node.get_gpus_unused()
-                self.n_used_cores += node.get_cpus_unused()
-                self.n_used_mem_in_gb += node.get_memory_unused()
+                self.n_used_gpus += node.gpus_in_use
+                self.n_used_cores += node.cores_in_use
+                self.n_used_mem_in_gb += node.memory_in_use
 
             # generates the overview
             self.gpus_overview = {1: (0, 0.0), 2: (0, 0.0), 4: (0, 0.0), 6: (0, 0.0), 8: (0, 0.0)}
