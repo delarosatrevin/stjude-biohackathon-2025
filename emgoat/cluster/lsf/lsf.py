@@ -48,8 +48,8 @@ class Cluster(BaseCluster):
         # update the nodes information with jobs
         super().update_node_with_job_info(node_list=self.nodes_list, job_list=self.jobs_list)
 
-        # finally generate the summary
-        self.summary = super().Summary(node_list, jobs_list)
+        # finally generate the summary based on the output results
+        self.summary = super().Summary(self.nodes_list, self.jobs_list)
 
 
     def _transform_node_list_infor(self, nodes_infor):
