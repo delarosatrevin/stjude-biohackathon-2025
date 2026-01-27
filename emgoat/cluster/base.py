@@ -189,6 +189,79 @@ class Cluster(ABC):
                 if node_name not in self.nodes_list:
                     self.nodes_list.append(node_name)
 
+    class Summary:
+        """
+        This is the summary of the current cluster usage, including the overview for the gpu usage
+        """
+
+        def __init__(self, nodes_list, job_list):
+            """
+            initialize the data for cluster summary
+            """
+
+            # initialize all of data
+            self.n_total_jobs = 0
+            self.n_running_jobs = 0
+            self.n_pending_jobs = 0
+            self.n_total_gpus = 0
+            self.n_used_gpus = 0
+            self.n_total_cores = 0
+            self.n_used_cores = 0
+            self.n_total_mem_in_gb = 0
+            self.n_used_mem_in_gb = 0
+
+            # all of job information
+            for job in job_list:
+                if job.general_state == JOB_STATUS_PD:
+                    self.n_pending_jobs += 1
+                else:
+                    self.n_running_jobs += 1
+                self.n_total_jobs += 1
+
+            # resources summary
+            for node in nodes_list:
+                self.n_total_gpus += node.ngpus
+                self.n_total_cores += node.ncpus
+                self.n_total_mem_in_gb += node.total_mem_in_gb
+                self.n_used_gpus += node.get_gpus_unused()
+                self.n_used_cores += node.get_cpus_unused()
+                self.n_used_mem_in_gb += node.get_memory_unused()
+
+            # generates the overview
+            self.gpus_overview = {1: (0, 0.0), 2: (0, 0.0), 4: (0, 0.0), 6: (0, 0.0), 8: (0, 0.0)}
+            for gpu_select in self.gpus_overview:
+                available_slots = 0
+                for node in nodes_list:
+                    gpus_remain = node.get_gpus_unused()
+                    if gpus_remain >= gpu_select:
+                        available_slots += int(gpus_remain / gpu_select)
+
+                # update the result
+                percentage = float(available_slots / self.n_total_gpus)
+                self.gpus_overview[gpu_select] = (available_slots, percentage)
+
+        def __str__(self):
+
+            # overview
+            overview = ""
+            for gpu_select in self.gpus_overview:
+                overview = overview + ("for {} gpu the number of available slots {} and "
+                                       "percentage {:.2f}, \n").format(gpu_select,
+                                                                       self.gpus_overview[gpu_select][0],
+                                                                       self.gpus_overview[gpu_select][1])
+
+            # result
+            return (f"total jobs number={self.n_total_jobs}, \n"
+                    f"number of running jobs={self.n_running_jobs}, \n"
+                    f"number of pending jobs={self.n_pending_jobs}, \n"
+                    f"total number of gpus={self.n_total_gpus}, \n"
+                    f"total number of used gpus={self.n_used_gpus}, \n"
+                    f"total number of cores={self.n_total_cores}, \n"
+                    f"total number of used cores={self.n_used_cores}, \n"
+                    f"total capacity of memory in gb={self.n_total_mem_in_gb}, \n"
+                    f"total capacity of used memory in gb={self.n_used_mem_in_gb}, \n" +
+                    overview)
+
     class JobRequirements:
         """ Simple structure to store requirements for a given job. """
 
@@ -227,6 +300,10 @@ class Cluster(ABC):
 
     @abstractmethod
     def get_accounts_info(self):
+        pass
+
+    @abstractmethod
+    def get_cluster_summary_info(self):
         pass
 
     ################################################################################
@@ -328,24 +405,4 @@ class Cluster(ABC):
         # finally return
         return account_list
 
-    def get_cluster_overview(self, nodes_list):
-        """
-        this function returns a cluster overview
-        :return: a dict that describes the availability of gpu resources
-        """
-        total_gpu_num = self.get_total_gpu_num(nodes_list)
-        gpu_selections = [1, 2, 4, 6, 8]
-        result = {}
-        for gpu_select in gpu_selections:
-            available_slots = 0
-            for node in nodes_list:
-                gpus_remain = node.get_gpus_unused()
-                if gpus_remain >= gpu_select:
-                    available_slots += int(gpus_remain / gpu_select)
 
-            # update the result
-            percentage = float(available_slots / total_gpu_num)
-            result[gpu_select] = (available_slots, percentage)
-
-        # return the result
-        return result

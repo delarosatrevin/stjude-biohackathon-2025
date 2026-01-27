@@ -23,15 +23,9 @@ def test_accounts_info():
         print(account)
         print("\n\n")
 
-def test_overview():
-    lsf = LSFCluster()
-    overview = lsf.get_cluster_overview(lsf.nodes_list)
-    for key, value in overview.items():
-        print("for the request gpu card: {0}, the available slot is {1} "
-              "and percentage is {2}".format(key, value[0], value[1]))
+def test_summary():
+    print(LSFCluster().summary)
 
-    print("total number of gpu cards: {}".format(lsf.get_total_gpu_num(lsf.nodes_list)))
-    print("total number of unused gpu cards: {}".format(lsf.get_total_unused_gpu_num(lsf.nodes_list)))
 
 
 

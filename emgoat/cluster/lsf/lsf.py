@@ -23,6 +23,9 @@ class Cluster(BaseCluster):
     def get_accounts_info(self):
         return self.accounts_list
 
+    def get_cluster_summary_info(self):
+        return self.summary
+
     def __init__(self):
         """
         initialization of lsf cluster
@@ -44,6 +47,9 @@ class Cluster(BaseCluster):
 
         # update the nodes information with jobs
         super().update_node_with_job_info(node_list=self.nodes_list, job_list=self.jobs_list)
+
+        # finally generate the summary
+        self.summary = super().Summary(node_list, jobs_list)
 
 
     def _transform_node_list_infor(self, nodes_infor):
@@ -93,7 +99,25 @@ class Cluster(BaseCluster):
         # return
         return jobs_list
 
+    def generate_json_results(self):
+        """
+        this function is used to output the results into json format
+        """
+        global LSF_COFNIG
 
+        # this is the json result file
+        json_result = LSF_COFNIG['lsf']['json_result_path']
+
+        # set up the result structure
+        node_list = self.get_nodes_info()
+        jobs_list = self.get_jobs_info()
+        acc_list = self.get_accounts_info()
+        summary = self.get_cluster_summary_info()
+        result = {"nodes": node_list, "jobs": jobs_list, "accounts": acc_list, "summary": summary}
+
+        # write it into json file
+        with open(json_result, 'w') as infor:
+            json.dump(result, infor, indent=4)
 
 
 
