@@ -26,6 +26,9 @@ def test_accounts_info():
 def test_summary():
     print(LSFCluster().summary)
 
+def test_result_output():
+    LSFCluster().generate_json_results()
+
 
 
 
