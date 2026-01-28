@@ -108,10 +108,11 @@ class Cluster(BaseCluster):
 
         # set up the result structure
         node_list = [x.to_dict() for x in self.get_nodes_info()]
-        jobs_list = [x.to_dict() for x in self.get_jobs_info()]
+        #jobs_list = [x.to_dict() for x in self.get_jobs_info()]
         acc_list  = [x.to_dict() for x in self.get_accounts_info() if x.has_any_jobs()]
         summary   = self.get_cluster_summary_info().to_dict()
-        result = {"nodes": node_list, "jobs": jobs_list, "accounts": acc_list, "summary": summary}
+        #result = {"nodes": node_list, "jobs": jobs_list, "accounts": acc_list, "summary": summary}
+        result = {"nodes": node_list, "accounts": acc_list, "summary": summary}
 
         # write it into json file
         with open(json_result, 'w') as infor:
