@@ -4,6 +4,7 @@
 
 from abc import ABC, abstractmethod
 from emgoat.util import JOB_STATUS_PD, VERY_BIG_NUMBER
+from datetime import datetime
 
 
 class Cluster(ABC):
@@ -121,12 +122,19 @@ class Cluster(ABC):
             return self.memory_in_use
 
     class Job:
-        """ Structure to store jobs information. """
+        """ 
+        Structure to store jobs information. 
 
-        def __init__(self, jobid, job_name, submit_time, state, general_state,
-                     pending_time, job_remaining_time,
-                     start_time, used_time, cpu_used, gpu_used, memory_used,
-                     compute_nodes, account_name):
+        make the type annotations to the input data members
+        """
+
+        def __init__(self, jobid: int, job_name: str, 
+                submit_time: datetime, state: str, general_state: str,
+                pending_time: int, job_remaining_time: int,
+                start_time: datetime, used_time: int, 
+                cpu_used: int, gpu_used: int, memory_used: int,
+                compute_nodes: list[str], 
+                account_name: str):
             """
             the job ID is an integer; from LSF/slurm etc. However for easy handling we just treat it as a string
 
@@ -187,18 +195,34 @@ class Cluster(ABC):
             else:
                 time_left = str(self.job_remaining_time)
 
+            # time format for the time - it should go to config finally
+            time_format = "%Y-%m-%d %H:%M:%S"
+
+            # double check the starrt time, it could be None
+            start_time_str = "N/A"
+            if self.start_time is not None:
+                start_time_str = self.start_time.strftime(time_format)
+
+            # make compute list into one string
+            if len(self.compute_nodes) == 1:
+                compute_nodes = self.compute_nodes[0]
+            elif len(self.compute_nodes) > 1:
+                compute_nodes = " ".join(self.compute_nodes)
+            else:
+                compute_nodes = " "
+
             # the dict
             return {"account_name": self.account_name, "jobID": self.jobid, "job_name": self.job_name,
-                    "submit_time": self.submit_time,
+                    "submit_time": self.submit_time.strftime(time_format),
                     "state": self.state, "general_state": self.general_state,
                     "pending_time_in_minutes": self.pending_time,
                     "job_remaining_time_in_minutes": time_left,
-                    "start_time": self.start_time,
+                    "start_time": start_time_str,
                     "used_time_in_minutes": self.used_time,
                     "cpu_used": self.cpu_used,
                     "gpu_used": self.gpu_used,
                     "memory_request_in_GB": self.memory_used,
-                    "compute_nodes_list": self.compute_nodes}
+                    "compute_nodes_list": compute_nodes}
 
     class Account:
         """
