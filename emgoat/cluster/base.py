@@ -60,6 +60,16 @@ class Cluster(ABC):
             self.cores_in_use += cores_in_use
             self.memory_in_use += memory_in_use
 
+        def to_dict(self):
+            """
+            this function is to convert this object into a dict
+            """
+            return {"node_name":self.name, "gpu_type":self.gpu_type, "total_gpus":self.ngpus,
+                    "total_cpus":self.ncpus, "total_mem_in_gb":self.total_mem_in_gb,
+                    "njobs":self.njobs, "ngpus_in_use":self.gpus_in_use, "ncpus_in_use":self.cores_in_use,
+                    "memory_in_use":self.memory_in_use, "available_gpus":self.get_gpus_unused(),
+                    "available_cpus":self.get_cpus_unused(), "available_memory":self.get_memory_unused()}
+
         def __str__(self):
             return (f"Node name={self.name}, \n"
                     f"gpu type={self.gpu_type}, \n"
@@ -168,6 +178,28 @@ class Cluster(ABC):
                     f"memory_request(GB): {self.memory_used}\n compute_nodes: {self.compute_nodes}\n "
                     f"account_name: {self.account_name}\n")
 
+        def to_dict(self):
+            """
+            this function is to transform the data into a dict
+            """
+            if self.job_remaining_time == VERY_BIG_NUMBER:
+                time_left = "None"
+            else:
+                time_left = str(self.job_remaining_time)
+
+            # the dict
+            return {"account_name": self.account_name, "jobID": self.jobid, "job_name": self.job_name,
+                    "submit_time": self.submit_time,
+                    "state": self.state, "general_state": self.general_state,
+                    "pending_time_in_minutes": self.pending_time,
+                    "job_remaining_time_in_minutes": time_left,
+                    "start_time": self.start_time,
+                    "used_time_in_minutes": self.used_time,
+                    "cpu_used": self.cpu_used,
+                    "gpu_used": self.gpu_used,
+                    "memory_request_in_GB": self.memory_used,
+                    "compute_nodes_list": self.compute_nodes}
+
     class Account:
         """
         define the account class associated with the jobs
@@ -206,6 +238,22 @@ class Cluster(ABC):
                 self.ncpus += ncores_used
                 if node_name not in self.nodes_list:
                     self.nodes_list.append(node_name)
+
+        def has_any_jobs(self):
+            """
+            return true if the account has any running/pending jobs
+            """
+            return self.n_running_jobs + self.n_pending_jobs > 0
+
+        def to_dict(self):
+            """this function is to transform the object into dict"""
+            nodes_name_list = " ".join(self.nodes_list)
+            return {"account_name":self.account_name,
+                    "n_running_jobs":self.n_running_jobs,
+                    "n_pending_jobs":self.n_pending_jobs,
+                    "n_gpus_used":self.ngpus,
+                    "n_cpus_used":self.ncpus,
+                    "compute_nodes_list": nodes_name_list}
 
     class Summary:
         """
@@ -279,6 +327,31 @@ class Cluster(ABC):
                     f"total capacity of memory in gb={self.n_total_mem_in_gb}, \n"
                     f"total capacity of used memory in gb={self.n_used_mem_in_gb}, \n" +
                     overview)
+
+        def to_dict(self):
+            """this function is to transform the data into dict"""
+
+            # convert the overview into a dict
+            result = { }
+            for gpus in self.gpus_overview:
+                v0 = self.gpus_overview[gpus][0]
+                v1 = self.gpus_overview[gpus][1]
+                key = "proposed_gpu_num_" + str(gpus)
+                result[key] = str(v0) + " " + str(v1)
+
+            # update result
+            result.update({"total_jobs_number":self.n_total_jobs,
+                    "n_running_jobs":self.n_running_jobs,
+                    "n_pending_jobs":self.n_pending_jobs,
+                    "total_gpus_number":self.n_total_gpus,
+                    "total_used_gpus":self.n_used_gpus,
+                    "total_cores_number":self.n_total_cores,
+                    "total_used_cores":self.n_used_cores,
+                    "all_available_memory_in_gb":self.n_total_mem_in_gb,
+                    "total_used_memory_in_gb":self.n_used_mem_in_gb})
+
+            # return
+            return result
 
     class JobRequirements:
         """ Simple structure to store requirements for a given job. """
