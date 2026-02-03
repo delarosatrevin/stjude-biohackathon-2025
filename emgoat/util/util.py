@@ -5,14 +5,13 @@ This file stores the utility functions
 import os
 import subprocess
 import csv
+import json
 from math import floor
 from pwd import getpwnam
 import importlib
 from importlib.machinery import SourceFileLoader
-
 from emtools.jobs import Args
-
-from datetime import datetime
+from datetime import datetime, timedelta
 from .macros import VERY_BIG_NUMBER, GPU_TYPE
 from .macros import JOB_STATUS_DONE, JOB_STATUS_PD, JOB_STATUS_RUN
 
@@ -240,6 +239,56 @@ def read_data_from_csv(file_name):
         for row in csv_reader:
             data_list.append(row)
     return data_list
+
+def generate_json_data_file(result, file_name):
+    """
+    This function will generate the json format of the input result data and dump it into the file
+    :param result: the input data, should be in dict
+    """
+    try:
+        with open(file_name, 'w') as job_infor:
+            json.dump(result, job_infor, indent=4)
+    except (TypeError, OverflowError): # Catch specific JSON-related errors
+        raise RuntimeError("The input data can not be transformed into json format of data "
+                           "and save it into file: {}".format(file_name))
+
+def read_json_data_file(file_name):
+    """
+    This function will read in the json format of results and return it
+    """
+
+    # firstly check whether the file exists?
+    if not os.path.exists(file_name):
+        raise RuntimeError("The input file is missing for reading the data: {}".format(file_name))
+
+    # now load in the data
+    with open(file_name, "r") as f:
+        data = json.load(f)
+
+    # now return the data
+    return data
+
+def need_newer_data_file(fname, time):
+    """
+    This function compares the data file and the input time stamp, if it's older than the
+    time limit let's return true; that means a new file needed to be generated. If the current
+    data file is good then we will return false
+
+    the input time is integer in minutes
+    """
+    # firstly check whether the file exists?
+    if not os.path.exists(fname):
+        return True
+
+    # now the file exists
+    timestamp = os.path.getmtime(fname)
+    dt1 = datetime.fromtimestamp(timestamp)
+    dt2 = datetime.now()
+    if abs(dt2 - dt1) < timedelta(minutes=time):
+        return False
+    else:
+        return True
+
 
 
 class Config:

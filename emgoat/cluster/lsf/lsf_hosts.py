@@ -8,6 +8,7 @@ from emgoat.config import get_config
 from emgoat.util import run_command, GPU_TYPE
 from emgoat.util import is_str_float, is_str_integer
 from emgoat.util import convert_float_to_integer
+from emgoat.util import generate_json_data_file, read_json_data_file, need_newer_data_file
 from .functions import *
 from datetime import datetime, timedelta
 
@@ -292,71 +293,6 @@ def parse_bhost_gpu_infor(output, result):
         raise RuntimeError("Failed to update the last node information "
                            "in terms of the gpu in parse_bhost_gpu_infor")
 
-
-def need_new_nodes_infor_text_file():
-    """
-    This function compares the nodes infor data file time stamp, if it's older than the
-    time limit let's return true; that means a new file needed to be generated. If the current
-    data file is good then we will return false
-    """
-    global LSF_COFNIG
-
-    # get the data file name
-    file_name = LSF_COFNIG['lsf']['node_data_file_name']
-    path_name = LSF_COFNIG['lsf']['data_output_dir']
-    time = int(LSF_COFNIG['lsf']['nodes_data_update_time'])
-    fname = path_name + "/" + file_name
-
-    # firstly check whether the file exists?
-    if not os.path.exists(fname):
-        return True
-
-    # now the file exists
-    timestamp = os.path.getmtime(fname)
-    dt1 = datetime.fromtimestamp(timestamp)
-    dt2 = datetime.now()
-    if abs(dt2 - dt1) < timedelta(minutes=time):
-        return False
-    else:
-        return True
-
-
-def generate_json_nodes_info(result):
-    """
-    This function will generate the json format of results
-    :param result: the input result data in terms of node we captured from above function
-    """
-    global LSF_COFNIG
-
-    # get the data file name
-    file_name = LSF_COFNIG['lsf']['node_data_file_name']
-    path_name = LSF_COFNIG['lsf']['data_output_dir']
-    fname = path_name + "/" + file_name
-
-    # now write the data into the file
-    with open(fname, 'w') as node_infor:
-        json.dump(result, node_infor, indent=4)
-
-
-def read_json_nodes_info():
-    """
-    This function will read in the json format of results and return it
-    """
-    global LSF_COFNIG
-
-    # get the data file name
-    file_name = LSF_COFNIG['lsf']['node_data_file_name']
-    path_name = LSF_COFNIG['lsf']['data_output_dir']
-    fname = path_name + "/" + file_name
-
-    # now load in the data
-    with open(fname, "r") as f:
-        data = json.load(f)
-
-    # now return the data
-    return data
-
-
 def get_nodes_info():
     """
     This function is the driver function for this module
@@ -370,10 +306,16 @@ def get_nodes_info():
     """
     global LSF_COFNIG
 
+    # get the data
+    file_name = LSF_COFNIG['lsf']['node_data_file_name']
+    path_name = LSF_COFNIG['lsf']['data_output_dir']
+    time = int(LSF_COFNIG['lsf']['nodes_data_update_time'])
+    fname = path_name + "/" + file_name
+
     # firstly let's see whether we have the data file and
     # we can read the data from the file
-    if not need_new_nodes_infor_text_file():
-        data = read_json_nodes_info()
+    if not need_newer_data_file(fname, time):
+        data = read_json_data_file(fname)
         return data
 
     # run the bhost command first
@@ -391,7 +333,7 @@ def get_nodes_info():
     parse_lshosts_cpu_infor(output, result)
 
     # save it to file
-    generate_json_nodes_info(result)
+    generate_json_data_file(result, fname)
 
     # finally return result
     return result

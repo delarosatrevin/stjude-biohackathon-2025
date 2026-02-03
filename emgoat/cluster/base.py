@@ -128,7 +128,7 @@ class Cluster(ABC):
         make the type annotations to the input data members
         """
 
-        def __init__(self, jobid: int, job_name: str, 
+        def __init__(self, jobid: str, job_name: str,
                 submit_time: datetime, state: str, general_state: str,
                 pending_time: int, job_remaining_time: int,
                 start_time: datetime, used_time: int, 
@@ -136,7 +136,7 @@ class Cluster(ABC):
                 compute_nodes: list[str], 
                 account_name: str):
             """
-            the job ID is an integer; from LSF/slurm etc. However for easy handling we just treat it as a string
+            the job ID is from LSF/slurm etc. However for easy handling we just treat it as a string
 
             the state is whether it's pending/running/finished/error/cancelled (five states allowed), the state
             symbol is taken from the scheduler (lsf/slurm)

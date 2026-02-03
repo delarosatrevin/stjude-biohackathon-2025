@@ -1,13 +1,11 @@
 """
 This file is to parse the bjobs output from lsf, this is the currently running/pending jobs list
 """
-import os
 import json
 from emgoat.config import get_config
 from emgoat.util import NOT_AVAILABLE
-from emgoat.util import run_command, get_job_general_status, convert_str_to_integer
+from emgoat.util import run_command, get_job_general_status, generate_json_data_file, read_json_data_file, need_newer_data_file
 from .functions import *
-from datetime import datetime, timedelta
 
 #
 # constants that from configuration
@@ -120,78 +118,22 @@ def parse_bjobs_output_for_alljobs(output):
     # now return
     return job_list
 
-def generate_json_jobs_info(result):
-    """
-    This function will generate the json format of results for jobs
-    :param result: the output for function parse_bjobs_output_for_alljobs
-    """
-    global LSF_COFNIG
-
-    # get the data file name
-    file_name = LSF_COFNIG['lsf']['jobs_data_file_name']
-    path_name = LSF_COFNIG['lsf']['data_output_dir']
-    fname = path_name + "/" + file_name
-
-    # now write the data into the file
-    with open(fname, 'w') as job_infor:
-        json.dump(result, job_infor, indent=4)
-
-
-def read_json_jobs_info():
-    """
-    This function will read in the json format of results and return it
-    """
-    global LSF_COFNIG
-
-    # get the data file name
-    file_name = LSF_COFNIG['lsf']['jobs_data_file_name']
-    path_name = LSF_COFNIG['lsf']['data_output_dir']
-    fname = path_name + "/" + file_name
-
-    # now load in the data
-    with open(fname, "r") as f:
-        data = json.load(f)
-
-    # now return the data
-    return data
-
-def need_new_infor_text_file_time():
-    """
-    This function compares the job infor data file time stamp, if it's older than the
-    time limit let's return true; that means a new file needed to be generated. If the current
-    data file is good then we will return false
-    """
-    global LSF_COFNIG
-
-    # get the data file name
-    file_name = LSF_COFNIG['lsf']['jobs_data_file_name']
-    path_name = LSF_COFNIG['lsf']['data_output_dir']
-    time = int(LSF_COFNIG['lsf']['jobs_data_update_time'])
-    fname = path_name + "/" + file_name
-
-    # firstly check whether the file exists?
-    if not os.path.exists(fname):
-        return True
-
-    # now the file exists
-    timestamp = os.path.getmtime(fname)
-    dt1 = datetime.fromtimestamp(timestamp)
-    dt2 = datetime.now()
-    if abs(dt2 - dt1) < timedelta(minutes=time):
-        return False
-    else:
-        return True
-
-
 def set_job_info():
     """
     this is the driver function for the lsf_jobs. It will return the job list, each job
     is a dict as described in parse_bjobs_output_for_alljobs
     """
+    global LSF_COFNIG
+
+    # get the data file name
+    file_name = LSF_COFNIG['lsf']['jobs_data_file_name']
+    path_name = LSF_COFNIG['lsf']['data_output_dir']
+    fname = path_name + "/" + file_name
+    time = int(LSF_COFNIG['lsf']['jobs_data_update_time'])
 
     # whether we have the file
-    if not need_new_infor_text_file_time():
-        data = read_json_jobs_info()
+    if not need_newer_data_file(fname, time):
+        data = read_json_data_file(fname)
         return data
 
     # now let's generate the file
@@ -199,6 +141,6 @@ def set_job_info():
     jobs_list = parse_bjobs_output_for_alljobs(output)
 
     # save the data
-    generate_json_jobs_info(jobs_list)
+    generate_json_data_file(jobs_list, fname)
     return jobs_list
 

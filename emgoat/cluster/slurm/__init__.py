@@ -1,0 +1,2 @@
+
+from .slurm import Cluster
