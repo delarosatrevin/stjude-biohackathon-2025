@@ -1,7 +1,7 @@
 
 import emgoat
 from emgoat.util import Config
-from emgoat.util import NOT_AVAILABLE
+from emgoat.util import NOT_AVAILABLE, JOB_STATUS_PD
 from emgoat.cluster.lsf.lsf_jobs import *
 from emgoat.cluster.lsf.lsf_hosts import *
 from ..base import Cluster as BaseCluster
@@ -45,11 +45,45 @@ class Cluster(BaseCluster):
         self.accounts_list = super().form_accounts_infor(self.jobs_list)
 
         # update the nodes information with jobs
-        super().update_node_with_job_info(node_list=self.nodes_list, job_list=self.jobs_list)
+        self._update_node_with_job_info()
 
         # finally generate the summary based on the output results
         self.summary = super().Summary(self.nodes_list, self.jobs_list)
 
+    def _update_node_with_job_info(self):
+        """
+        this function will further update the node with the job information
+        """
+        for node in self.nodes_list:
+
+            # get the node name
+            node_name = node.name
+
+            # get the job landing on the node
+            for job in self.jobs_list:
+
+                # update the node data
+                nodes = job.compute_nodes
+                if node_name not in nodes:
+                    continue
+
+                # if the job is pending status, skip it
+                if job.general_state == JOB_STATUS_PD:
+                    continue
+
+                # test whether nodes is list >= 1
+                nnodes = len(nodes)
+                if nnodes == 0:
+                    print(job)
+                    raise RuntimeError("the number of nodes for the above job is 0 in update_node_with_job_info")
+
+                # update data
+                # all of data below should be good for direct compute
+                ngpus_per_node = int(job.gpu_used / nnodes)
+                ncpus_per_node = int(job.cpu_used / nnodes)
+                mem_per_node = int(job.memory_used / nnodes)
+                node.update_jobs_infor(gpus_in_use=ngpus_per_node, cores_in_use=ncpus_per_node,
+                                       memory_in_use=mem_per_node)
 
     def _transform_node_list_infor(self, nodes_infor):
         """
