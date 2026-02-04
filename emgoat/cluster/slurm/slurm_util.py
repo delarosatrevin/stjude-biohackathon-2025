@@ -13,6 +13,66 @@ def parse_slurm_host_names(data: str):
     else:
         return data
 
+def get_gpu_number_from_sinfo_output(input: str):
+    """
+    this is the parse the input line from sinfo ouput to get the gpu number data
+    the input data could be in following forms, (null), gpu:0, gpu:a100:1(S:0) etc.
+
+    for the real data, we will get rid of the string inside the braket and take the last number
+    in the string
+    """
+
+    # if the string has null, that means the input does not have any gpu data
+    if input.find("null") >=0:
+        return 0
+
+    # now we have the real data
+    # get rid of the data inside the braket
+    # we note that the data may only have one braket, that is ( sign; it may missing the )
+    if ":" in input:
+        if input.find("(") >= 0:
+            s0 = input.split("(")[0]
+        else:
+            s0 = input
+        s = [x for x in s0.strip().split(":")]
+
+        # always the last value is the number
+        return int(s[-1])
+    else:
+        raise RuntimeError("The input data does not have :, failed for parsing: {}".format(input))
+
+def get_gpu_type_from_sinfo_output(input: str):
+    """
+    this is the parse the input line from sinfo ouput to get the gpu type data
+    the input data could be in following forms, (null), gpu:0, gpu:a100:1(S:0) etc.
+
+    for the real data, we will get rid of the string inside the braket and take the type data
+    """
+
+    # if the string has null, that means the input does not have any gpu data
+    if input.find("null") >=0:
+        return "none"
+
+    # now we have the real data
+    # get rid of the data inside the braket
+    # we note that the data may only have one braket, that is ( sign; it may missing the )
+    if ":" in input:
+        if input.find("(") >= 0:
+            s0 = input.split("(")[0]
+        else:
+            s0 = input
+        s = [x for x in s0.strip().split(":")]
+
+        # the last value is always the number
+        # so we take the string before the number
+        if len(s) >= 2:
+            return s[-2]
+        else:
+            raise RuntimeError("The input data is invalid for paring the gpu type: {}".format(input))
+    else:
+        raise RuntimeError("The input data does not have :, failed for parsing: {}".format(input))
+
+
 def parse_tres_data_from_json(data):
     """
     this function is used to parse the json data fields
