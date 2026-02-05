@@ -22,12 +22,15 @@ class Cluster(ABC):
         All of the information are complete when passing into this constructor
         """
 
-        def __init__(self, name, gpu_type, ngpus, ncpus, total_mem_in_gb):
+        def __init__(self, name, gpu_type, ngpus, ngpus_used, ncpus, ncpus_used, total_mem_in_gb,
+                     mem_used, njobs, with_usage_data):
             """
-            as the initial setup, all of the input data are corresponding to complete information
-            regarding to the node
+            all of the input data are for the given node
 
-            the jobs related information will be initialized later (njobs, cores_in_use etc.)
+            the jobs related information will be initialized later (njobs, cores_in_use etc.), if with usage data
+            is true; then the input usage data (mem_used) etc. will be used to update the value
+
+            Otherwise the usage data will be update later
 
             sometimes because the default data can be < 0, therefore we check whether the data is > 0
             """
@@ -51,10 +54,18 @@ class Cluster(ABC):
             self.gpus_in_use = 0
             self.cores_in_use = 0
             self.memory_in_use = 0
+            if with_usage_data:
+                self.njobs = njobs
+                if ngpus_used > 0:
+                    self.gpus_in_use = ngpus_used
+                if ncpus_used > 0:
+                    self.cores_in_use = ncpus_used
+                if mem_used > 0:
+                    self.memory_in_use = mem_used
 
         def update_jobs_infor(self, gpus_in_use, cores_in_use, memory_in_use):
             """
-            update the corresponding data from one job
+            update the corresponding usage data from one job
             """
             self.njobs += 1
             self.gpus_in_use += gpus_in_use

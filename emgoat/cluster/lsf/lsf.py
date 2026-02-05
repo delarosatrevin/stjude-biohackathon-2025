@@ -92,9 +92,16 @@ class Cluster(BaseCluster):
 
         # here each node is a dict, see the form_nodes_infor_list_from_node_names
         # function in lsf_hosts.py for more information
+        # for LSF case, it does not have the usage data; so we will set it 0
+        gpu_used = 0
+        cpu_used = 0
+        mem_used = 0
+        n_jobs = 0
+        with_usage_data = False
         nodes_list = []
         for node in nodes_infor:
-            n = self.Node(node['name'], node['gpu_type'], node['ngpus'], node['ncpus'], node['mem_in_gb'])
+            n = self.Node(node['name'], node['gpu_type'], node['ngpus'], gpu_used,
+                          node['ncpus'], cpu_used, node['mem_in_gb'], mem_used, n_jobs, with_usage_data)
             nodes_list.append(n)
 
         # return
