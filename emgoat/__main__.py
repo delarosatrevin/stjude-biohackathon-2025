@@ -24,12 +24,12 @@ if __name__ == '__main__':
     args = p.parse_args()
 
     # for LSF cluster whether we generate the cluster usage data?
-    if args.generate_cluster_usage_data:
+    if args.generate_lsf_cluster_usage_data:
         LSFCluster().generate_json_results()
 
 
     # for LSF cluster whether we generate the cluster usage data?
-    if args.generate_cluster_usage_data:
+    if args.generate_slurm_cluster_usage_data:
         SlurmCluster().generate_json_results()
 
     """
