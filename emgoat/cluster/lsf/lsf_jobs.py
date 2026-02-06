@@ -32,9 +32,6 @@ def parse_bjobs_output_for_alljobs(output):
     """
     global LSF_COFNIG
 
-    # time format
-    time_format = LSF_COFNIG['lsf']['time_format']
-
     # load in the raw output to json format output for further parsing
     data = json.loads(output)
 
@@ -81,24 +78,17 @@ def parse_bjobs_output_for_alljobs(output):
         else:
             raise RuntimeError("Invalid memory requested passed in: {}".format(ori_mem_request))
 
-        # host name
-        # if nhosts > 1:
-        #     from pprint import pprint
-        #     pprint(record)
-        #     raise RuntimeError(
-        #         "It seems the job used more than one node, currently we do not know how to get the data")
-
         # the start time could be None
         start_time_str = NOT_AVAILABLE
         if start_time is not None:
-            start_time_str = start_time.strftime(time_format)
+            start_time_str = start_time.isoformat()
 
         # now we have everything, building the dict
         # further change the datetime into string
         job_infor = {
             'jobid': jobid,
             'job_name': job_name,
-            'submit_time': submit_time.strftime(time_format),
+            'submit_time': submit_time.isoformat(),
             'state': status,
             'general_state': get_job_general_status(status),
             'pending_time': pending_time,

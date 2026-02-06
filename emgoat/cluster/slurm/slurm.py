@@ -1,17 +1,17 @@
 
 import emgoat
 from emgoat.util import Config
-from emgoat.util import NOT_AVAILABLE, JOB_STATUS_PD
-from emgoat.cluster.lsf.lsf_jobs import *
-from emgoat.cluster.lsf.lsf_hosts import *
+from emgoat.util import NOT_AVAILABLE
+from emgoat.cluster.slurm.slurm_jobs import *
+from emgoat.cluster.slurm.slurm_hosts import *
 from ..base import Cluster as BaseCluster
 from datetime import datetime
 
 class Cluster(BaseCluster):
-    """ Cluster implementation for LSF system. """
-    _name = "lsf"
-    _config = Config(emgoat.config['lsf'])
-    #_job_snapshots_config = Config(emgoat.config['snapshots'])
+    """ Cluster implementation for Slurm system. """
+    _name = "slurm"
+    _config = Config(emgoat.config['slurm'])
+    _job_snapshots_config = Config(emgoat.config['snapshots'])
 
     def get_nodes_info(self):
         return self.nodes_list
@@ -27,7 +27,7 @@ class Cluster(BaseCluster):
 
     def __init__(self):
         """
-        initialization of lsf cluster
+        initialization of slurm cluster
         """
 
         # cluster type
@@ -35,73 +35,41 @@ class Cluster(BaseCluster):
 
         # get the nodes information
         node_list = get_nodes_info()
-        self.nodes_list = self._transform_node_list_infor(node_list)
+        jobs_list = set_job_info()
+        self.nodes_list = self._transform_node_list_infor(node_list, jobs_list)
 
         # get the jobs information
-        jobs_list = set_job_info()
         self.jobs_list = self._transform_jobs_list_infor(jobs_list)
 
         # set up the account list
         self.accounts_list = super().form_accounts_infor(self.jobs_list)
 
-        # update the nodes information with jobs
-        self._update_node_with_job_info()
-
         # finally generate the summary based on the output results
         self.summary = super().Summary(self.nodes_list, self.jobs_list)
 
-    def _update_node_with_job_info(self):
-        """
-        this function will further update the node with the job information
-        """
-        for node in self.nodes_list:
 
-            # get the node name
-            node_name = node.name
-
-            # get the job landing on the node
-            for job in self.jobs_list:
-
-                # update the node data
-                nodes = job.compute_nodes
-                if node_name not in nodes:
-                    continue
-
-                # if the job is pending status, skip it
-                if job.general_state == JOB_STATUS_PD:
-                    continue
-
-                # test whether nodes is list >= 1
-                nnodes = len(nodes)
-                if nnodes == 0:
-                    print(job)
-                    raise RuntimeError("the number of nodes for the above job is 0 in update_node_with_job_info")
-
-                # update data
-                # all of data below should be good for direct compute
-                ngpus_per_node = int(job.gpu_used / nnodes)
-                ncpus_per_node = int(job.cpu_used / nnodes)
-                mem_per_node = int(job.memory_used / nnodes)
-                node.update_jobs_infor(gpus_in_use=ngpus_per_node, cores_in_use=ncpus_per_node,
-                                       memory_in_use=mem_per_node)
-
-    def _transform_node_list_infor(self, nodes_infor):
+    def _transform_node_list_infor(self, nodes_infor, jobs_infor):
         """
         This function transform the input node information list into the list of Node
         """
 
+        # set up the job infor list on each node
+        # key is the node name, value is the corresponding number of jobs on the node
+        job_infor_list = {x['name']: 0 for x in nodes_infor}
+        for node_name in job_infor_list:
+            for job in jobs_infor:
+                node_names_list = job['compute_nodes']
+                if node_names_list.find(node_name) >=0:
+                    job_infor_list[node_name] += 1
+
         # here each node is a dict, see the form_nodes_infor_list_from_node_names
         # function in lsf_hosts.py for more information
-        # for LSF case, it does not have the usage data; so we will set it 0
-        gpu_used = 0
-        cpu_used = 0
-        mem_used = 0
-        n_jobs = 0
-        with_usage_data = False
         nodes_list = []
         for node in nodes_infor:
-            n = self.Node(node['name'], node['gpu_type'], node['ngpus'], gpu_used,
-                          node['ncpus'], cpu_used, node['mem_in_gb'], mem_used, n_jobs, with_usage_data)
+            njobs = job_infor_list[node]
+            n = self.Node(node['name'], node['gpu_type'], node['ngpus'], node['n_used_gpus'],
+                          node['ncpus'], node['n_used_cpus'], node['mem_in_gb'], node['used_mem_in_gb'],
+                          njobs,True)
             nodes_list.append(n)
 
         # return
@@ -110,8 +78,9 @@ class Cluster(BaseCluster):
     def _transform_jobs_list_infor(self, jobs_infor):
         """
         This function transform the input jobs information list into the list of Job
-        """
 
+        for slurm job output, it uses iso format of time so no time format really needed
+        """
         # here each node is a dict, see the form_nodes_infor_list_from_node_names
         # function in lsf_hosts.py for more information
         jobs_list = []

@@ -3,7 +3,7 @@ This file is to parse the squeue output from slurm, this is the currently runnin
 """
 import json
 from emgoat.config import get_config
-from emgoat.util import run_command, whether_job_is_running, whether_job_is_pending, NOT_AVAILABLE
+from emgoat.util import run_command, whether_job_is_running, whether_job_is_pending, NOT_AVAILABLE, VERY_BIG_NUMBER
 from emgoat.util import get_job_general_status, generate_json_data_file, read_json_data_file, need_newer_data_file
 from .slurm_util import parse_slurm_host_names,parse_tres_data_from_json
 from datetime import datetime
@@ -82,7 +82,10 @@ def parse_squeue_output_for_alljobs(output: str):
             pending_time = (datetime.now() - submit_time_t).total_seconds()/60
 
         # compute time left
-        left_time = requested_time - running_time
+        # if job is not started, the left time is set to a very big number
+        left_time = VERY_BIG_NUMBER
+        if whether_job_is_running(status):
+            left_time = requested_time - running_time
 
         # change the time into string
         submit_time = submit_time_t.isoformat()

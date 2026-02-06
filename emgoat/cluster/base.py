@@ -1,9 +1,8 @@
 #
-# this simple class describe the job information, it basically collect job information from bjobs output
+# in the class of cluster, and it's derived class; all of the time format we use the iso format
 #
-
 from abc import ABC, abstractmethod
-from emgoat.util import JOB_STATUS_PD, VERY_BIG_NUMBER
+from emgoat.util import JOB_STATUS_PD, VERY_BIG_NUMBER, NOT_AVAILABLE
 from datetime import datetime
 
 
@@ -200,19 +199,18 @@ class Cluster(ABC):
         def to_dict(self):
             """
             this function is to transform the data into a dict
+
+            remember the input datetime is always in isoformat
             """
             if self.job_remaining_time == VERY_BIG_NUMBER:
                 time_left = "None"
             else:
                 time_left = str(self.job_remaining_time)
 
-            # time format for the time - it should go to config finally
-            time_format = "%Y-%m-%d %H:%M:%S"
-
             # double check the starrt time, it could be None
-            start_time_str = "N/A"
+            start_time_str = NOT_AVAILABLE
             if self.start_time is not None:
-                start_time_str = self.start_time.strftime(time_format)
+                start_time_str = self.start_time.isoformat()
 
             # make compute list into one string
             if len(self.compute_nodes) == 1:
@@ -224,7 +222,7 @@ class Cluster(ABC):
 
             # the dict
             return {"account_name": self.account_name, "jobID": self.jobid, "job_name": self.job_name,
-                    "submit_time": self.submit_time.strftime(time_format),
+                    "submit_time": self.submit_time.isoformat(),
                     "state": self.state, "general_state": self.general_state,
                     "pending_time_in_minutes": self.pending_time,
                     "job_remaining_time_in_minutes": time_left,
