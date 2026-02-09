@@ -144,6 +144,31 @@ def whether_job_is_finished(state):
                 whether_job_is_pending(state) or
                 whether_job_is_suspending(state))
 
+def whether_node_is_good_for_newjobs(status: str):
+    """
+    whether the input status shows the node is good for new jobs
+    """
+    s = status.lower()
+    if s == "ok" or s.find("idle") >= 0 or s.find("mix") >=0 or s.find("alloc") >=0:
+        return True
+    return False
+
+def whether_node_is_drained(status: str):
+    """
+    whether the node is not available for jobs, being drained in slurm
+    """
+    s = status.lower()
+    if s == "closed" or s.find("drain") >= 0 or s.find("reserved") >=0:
+        return True
+    return False
+
+def whether_node_is_off(status: str):
+    """
+    whether the node is off, if the node is neither good for new jobs; nor is drained;
+    we consider the node is off (power, service is down, or other reasons)
+    """
+    return not (whether_node_is_good_for_newjobs(status) or whether_node_is_drained(status))
+
 def convert_percentage_to_decimal(input):
     """
     convert the input percentage string into a decimal

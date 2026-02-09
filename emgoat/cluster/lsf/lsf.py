@@ -100,7 +100,7 @@ class Cluster(BaseCluster):
         with_usage_data = False
         nodes_list = []
         for node in nodes_infor:
-            n = self.Node(node['name'], node['gpu_type'], node['ngpus'], gpu_used,
+            n = self.Node(node['name'], node['gpu_type'], node['status'], node['ngpus'], gpu_used,
                           node['ncpus'], cpu_used, node['mem_in_gb'], mem_used, n_jobs, with_usage_data)
             nodes_list.append(n)
 

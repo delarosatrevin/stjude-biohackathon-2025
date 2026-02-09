@@ -67,7 +67,7 @@ class Cluster(BaseCluster):
         nodes_list = []
         for node in nodes_infor:
             njobs = job_infor_list[node]
-            n = self.Node(node['name'], node['gpu_type'], node['ngpus'], node['n_used_gpus'],
+            n = self.Node(node['name'], node['gpu_type'], node['status'], node['ngpus'], node['n_used_gpus'],
                           node['ncpus'], node['n_used_cpus'], node['mem_in_gb'], node['used_mem_in_gb'],
                           njobs,True)
             nodes_list.append(n)

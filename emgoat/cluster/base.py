@@ -21,7 +21,7 @@ class Cluster(ABC):
         All of the information are complete when passing into this constructor
         """
 
-        def __init__(self, name, gpu_type, ngpus, ngpus_used, ncpus, ncpus_used, total_mem_in_gb,
+        def __init__(self, name, gpu_type, status, ngpus, ngpus_used, ncpus, ncpus_used, total_mem_in_gb,
                      mem_used, njobs, with_usage_data):
             """
             all of the input data are for the given node
@@ -29,12 +29,15 @@ class Cluster(ABC):
             the jobs related information will be initialized later (njobs, cores_in_use etc.), if with usage data
             is true; then the input usage data (mem_used) etc. will be used to update the value
 
+            status is related to the node status, for example; "closed" in LSF means the node does not accept new jobs
+
             Otherwise the usage data will be update later
 
             sometimes because the default data can be < 0, therefore we check whether the data is > 0
             """
             self.name = name
             self.gpu_type = gpu_type
+            self.status = status
             if ngpus > 0:
                 self.ngpus = ngpus
             else:
@@ -75,7 +78,7 @@ class Cluster(ABC):
             """
             this function is to convert this object into a dict
             """
-            return {"node_name":self.name, "gpu_type":self.gpu_type, "total_gpus":self.ngpus,
+            return {"node_name":self.name, "gpu_type":self.gpu_type, "status":self.status, "total_gpus":self.ngpus,
                     "total_cpus":self.ncpus, "total_mem_in_gb":self.total_mem_in_gb,
                     "njobs":self.njobs, "ngpus_in_use":self.gpus_in_use, "ncpus_in_use":self.cores_in_use,
                     "memory_in_use":self.memory_in_use, "available_gpus":self.get_gpus_unused(),
@@ -83,6 +86,7 @@ class Cluster(ABC):
 
         def __str__(self):
             return (f"Node name={self.name}, \n"
+                    f"node status={self.status}, \n"
                     f"gpu type={self.gpu_type}, \n"
                     f"ngpus={self.ngpus}, \n"
                     f"ncpus={self.ncpus}, \n"
