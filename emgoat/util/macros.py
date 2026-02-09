@@ -34,7 +34,7 @@ JOB_STATUS_DONE = "done"
 ############################
 # available GPU type
 ############################
-GPU_TYPE = ["V100_16G", "V100_32G", "A100_80G"]
+GPU_TYPE = ["V100_16G", "V100_32G", "A100_80G", "H100_NVL"]
 
 ############################
 # set up a very big number

@@ -108,7 +108,7 @@ def run_bhosts_get_gpu_info(node_list):
 
     # get the argument list
     arg = LSF_COFNIG['lsf']['bhosts_gpu_info'].split()
-    arg.append(" ".join(node_list))
+    arg = arg + node_list
     return run_command(arg)
 
 def run_bhosts_update_node_status(node_list, result):
@@ -119,7 +119,7 @@ def run_bhosts_update_node_status(node_list, result):
     in the result directly
     """
     # run the command
-    arg = ["bhosts", " ".join(node_list)]
+    arg = ["bhosts"] + node_list
     output = run_command(arg)
 
     # now update the status information in the result
@@ -142,7 +142,7 @@ def run_lshosts_get_cpu_info(node_name_list):
     :return: the raw output for the lshost command,
     """
     # get the argument list
-    arg = ['lshosts', " ".join(node_name_list)]
+    arg = ['lshosts'] + node_name_list
     return run_command(arg)
 
 
