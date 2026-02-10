@@ -41,77 +41,76 @@ def parse_squeue_output_for_alljobs(output: str):
 
         # only consider the running/pending jobs
         status = record['job_state'][0]
-        if not whether_job_is_running(status) and not whether_job_is_pending(status):
-            continue
+        if whether_job_is_running(status) or whether_job_is_pending(status):
 
-        # load in the json data
-        jobid = record['job_id']
-        account_name = record['account']
-        user_name = record['user_name']
-        job_name = record['name']
-        submit_time_t = datetime.fromtimestamp(record['submit_time']['number'])
-        requested_time = int(record['time_limit']['number'])  # this is in minutes
-        tres_request = record['tres_req_str']
+            # load in the json data
+            jobid = record['job_id']
+            account_name = record['account']
+            user_name = record['user_name']
+            job_name = record['name']
+            submit_time_t = datetime.fromtimestamp(record['submit_time'])
+            requested_time = int(record['time_limit'])  # this is in minutes
+            tres_request = record['tres_req_str']
 
-        # get the job allocation host list
-        host_list = " "
-        if whether_job_is_running(status):
-            host_list = parse_slurm_host_names(record['job_resources']['nodes'])
+            # get the job allocation host list
+            host_list = " "
+            if whether_job_is_running(status):
+                host_list = parse_slurm_host_names(record['job_resources']['nodes'])
 
-        # get the resources data from tres
-        data = parse_tres_data_from_json(tres_request)
-        num_nodes = data[0]
-        ncpus = data[1]
-        mem_in_gb = data[2]
-        ngpus = data[3]
+            # get the resources data from tres
+            data = parse_tres_data_from_json(tres_request)
+            num_nodes = data[0]
+            ncpus = data[1]
+            mem_in_gb = data[2]
+            ngpus = data[3]
 
-        # double check the number of nodes with host list
-        if len(host_list.split()) != num_nodes:
-            raise RuntimeError("the number of nodes we get from tres_req_str is not equal to the number of hosts "
-                               "in the host list in job_resources")
+            # double check the number of nodes with host list
+            if len(host_list.split()) != num_nodes:
+                raise RuntimeError("the number of nodes we get from tres_req_str is not equal to the number of hosts "
+                                   "in the host list in job_resources")
 
-        # only running job has start time
-        start_time_t = NOT_AVAILABLE
-        running_time = 0
-        if whether_job_is_running(status):
-            start_time = datetime.fromtimestamp(record['start_time']['number'])
-            pending_time = (start_time - submit_time_t).total_seconds()/60
-            running_time = (datetime.now() - submit_time_t).total_seconds()/60
-            start_time_t = start_time.isoformat()
-        else:
-            pending_time = (datetime.now() - submit_time_t).total_seconds()/60
+            # only running job has start time
+            start_time_t = NOT_AVAILABLE
+            running_time = 0
+            if whether_job_is_running(status):
+                start_time = datetime.fromtimestamp(record['start_time'])
+                pending_time = (start_time - submit_time_t).total_seconds()/60
+                running_time = (datetime.now() - submit_time_t).total_seconds()/60
+                start_time_t = start_time.isoformat()
+            else:
+                pending_time = (datetime.now() - submit_time_t).total_seconds()/60
 
-        # compute time left
-        # if job is not started, the left time is set to a very big number
-        left_time = VERY_BIG_NUMBER
-        if whether_job_is_running(status):
-            left_time = requested_time - running_time
+            # compute time left
+            # if job is not started, the left time is set to a very big number
+            left_time = VERY_BIG_NUMBER
+            if whether_job_is_running(status):
+                left_time = requested_time - running_time
 
-        # change the time into string
-        submit_time = submit_time_t.isoformat()
+            # change the time into string
+            submit_time = submit_time_t.isoformat()
 
-        # now we have everything, building the dict
-        # further change the datetime into string
-        # this is to save the result into file
-        job_infor = {
-            'jobid': jobid,
-            'job_name': job_name,
-            'submit_time': submit_time,
-            'state': status,
-            'general_state': get_job_general_status(status),
-            'pending_time': pending_time,
-            'job_remaining_time': left_time,
-            'start_time': start_time_t,
-            'used_time': running_time,
-            'cpu_used': ncpus,
-            'gpu_used': ngpus,
-            'memory_used': mem_in_gb,
-            'compute_nodes': host_list,
-            'account_name': account_name
-        }
+            # now we have everything, building the dict
+            # further change the datetime into string
+            # this is to save the result into file
+            job_infor = {
+                'jobid': jobid,
+                'job_name': job_name,
+                'submit_time': submit_time,
+                'state': status,
+                'general_state': get_job_general_status(status),
+                'pending_time': pending_time,
+                'job_remaining_time': left_time,
+                'start_time': start_time_t,
+                'used_time': running_time,
+                'cpu_used': ncpus,
+                'gpu_used': ngpus,
+                'memory_used': mem_in_gb,
+                'compute_nodes': host_list,
+                'account_name': account_name
+            }
 
-        # now add the job infor
-        job_list.append(job_infor)
+            # now add the job infor
+            job_list.append(job_infor)
 
     # finally return
     return job_list
