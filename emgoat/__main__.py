@@ -6,7 +6,7 @@ import argparse
 
 import emgoat
 from emgoat.cluster.lsf import Cluster as LSFCluster
-from emgoat.cluster.lsf import Cluster as SlurmCluster
+from emgoat.cluster.slurm import Cluster as SlurmCluster
 
 here = os.path.abspath(os.path.dirname(__file__))
 

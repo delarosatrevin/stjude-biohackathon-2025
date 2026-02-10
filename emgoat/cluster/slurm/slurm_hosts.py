@@ -1,6 +1,6 @@
 from emgoat.config import get_config
 from emgoat.util import run_command
-from slurm_util import get_gpu_number_from_sinfo_output,get_gpu_type_from_sinfo_output
+from .slurm_util import get_gpu_number_from_sinfo_output,get_gpu_type_from_sinfo_output
 from emgoat.util import generate_json_data_file, read_json_data_file, need_newer_data_file
 #
 # constants that from configuration
@@ -16,14 +16,14 @@ def get_raw_sinfo_data():
 
     # let's get the output data in form of list of string
     # "-N" makes the result listed every node one line
-    format_opts = '--Format=' + '"' + slurm_COFNIG['slurm']['sinfo_format'] + '"'
+    format_opts = '--Format=' + slurm_COFNIG['slurm']['sinfo_format'] 
     args = ['sinfo', '-N', format_opts]
     infor = run_command(args)
 
     # whether we have any data?
     # let's capture the headline, so that we know the position for the data
     get_headline = False
-    label = "NODELIST"
+    label = "NODE"
     for line in infor.splitlines():
         if line.find(label) >= 0:
             get_headline = True
@@ -62,7 +62,7 @@ def parse_sinfo_data(infor: str):
     for line in infor.splitlines():
 
         # this is the headline
-        if line.find("NODELIST") >= 0:
+        if line.find("NODE") >= 0:
 
             # let's analyze this line
             data_fields = [f.strip() for f in line.split()]
@@ -99,7 +99,7 @@ def parse_sinfo_data(infor: str):
     for line in infor.splitlines():
 
         # all of stuff begins after the headline
-        if line.find("NODELIST") >= 0:
+        if line.find("NODE") >= 0:
             continue
 
         # now read in each line

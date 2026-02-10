@@ -11,7 +11,7 @@ class Cluster(BaseCluster):
     """ Cluster implementation for Slurm system. """
     _name = "slurm"
     _config = Config(emgoat.config['slurm'])
-    _job_snapshots_config = Config(emgoat.config['snapshots'])
+    #_job_snapshots_config = Config(emgoat.config['snapshots'])
 
     def get_nodes_info(self):
         return self.nodes_list
@@ -66,8 +66,9 @@ class Cluster(BaseCluster):
         # function in lsf_hosts.py for more information
         nodes_list = []
         for node in nodes_infor:
-            njobs = job_infor_list[node]
-            n = self.Node(node['name'], node['gpu_type'], node['status'], node['ngpus'], node['n_used_gpus'],
+            name = node['name']
+            njobs = job_infor_list[name]
+            n = self.Node(name, node['gpu_type'], node['status'], node['ngpus'], node['n_used_gpus'],
                           node['ncpus'], node['n_used_cpus'], node['mem_in_gb'], node['used_mem_in_gb'],
                           njobs,True)
             nodes_list.append(n)
