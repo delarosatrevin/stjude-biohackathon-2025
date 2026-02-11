@@ -3,6 +3,7 @@
 #
 from abc import ABC, abstractmethod
 from emgoat.util import JOB_STATUS_PD, VERY_BIG_NUMBER, NOT_AVAILABLE
+from emgoat.util import whether_node_is_off
 from datetime import datetime
 
 
@@ -323,6 +324,9 @@ class Cluster(ABC):
 
             # resources summary
             for node in nodes_list:
+                # let's exclude the off nodes
+                if whether_node_is_off(node.status):
+                    continue
                 self.n_total_gpus += node.ngpus
                 self.n_total_cores += node.ncpus
                 self.n_total_mem_in_gb += node.total_mem_in_gb
@@ -331,7 +335,7 @@ class Cluster(ABC):
                 self.n_used_mem_in_gb += node.memory_in_use
 
             # generates the overview
-            self.gpus_overview = {1: (0, 0.0), 2: (0, 0.0), 4: (0, 0.0), 6: (0, 0.0), 8: (0, 0.0)}
+            self.gpus_overview = {1: 0, 2: 0, 4: 0, 6: 0, 8: 0}
             for gpu_select in self.gpus_overview:
                 available_slots = 0
                 for node in nodes_list:
@@ -340,18 +344,15 @@ class Cluster(ABC):
                         available_slots += int(gpus_remain / gpu_select)
 
                 # update the result
-                percentage = float(available_slots / self.n_total_gpus)
-                self.gpus_overview[gpu_select] = (available_slots, percentage)
+                self.gpus_overview[gpu_select] = available_slots
 
         def __str__(self):
 
             # overview
             overview = ""
             for gpu_select in self.gpus_overview:
-                overview = overview + ("for {} gpu the number of available slots {} and "
-                                       "percentage {:.2f}, \n").format(gpu_select,
-                                                                       self.gpus_overview[gpu_select][0],
-                                                                       self.gpus_overview[gpu_select][1])
+                overview = overview + ("for {0} gpu the number of available slots {1}\n").format(gpu_select,
+                                                                       self.gpus_overview[gpu_select])
 
             # result
             return (f"total jobs number={self.n_total_jobs}, \n"
@@ -371,10 +372,8 @@ class Cluster(ABC):
             # convert the overview into a dict
             result = { }
             for gpus in self.gpus_overview:
-                v0 = self.gpus_overview[gpus][0]
-                v1 = self.gpus_overview[gpus][1]
                 key = "proposed_gpu_num_" + str(gpus)
-                result[key] = str(v0) + " " + str(v1)
+                result[key] = self.gpus_overview[gpus]
 
             # update result
             result.update({"total_jobs_number":self.n_total_jobs,
