@@ -14,14 +14,14 @@ from .functions import *
 #
 LSF_COFNIG = get_config()
 
-def run_bqueues():
+def run_bqueues(queue_name: str):
     """
     run the bqueues command to get host group information for the given queue
 
     :return: the raw output for the bqueues command
     """
     global LSF_COFNIG
-    args = ['bqueues', '-l', LSF_COFNIG['lsf']['queue_name']]
+    args = ['bqueues', '-l', queue_name]
     return run_command(args)
 
 def run_bmgroup(hostgroup: str):
@@ -373,7 +373,7 @@ def sceen_out_invalid_nodes(result):
         return result
 
 
-def get_nodes_info():
+def get_nodes_info(queue_name: str):
     """
     This function is the driver function for this module
 
@@ -390,7 +390,7 @@ def get_nodes_info():
     file_name = LSF_COFNIG['lsf']['node_data_file_name']
     path_name = LSF_COFNIG['lsf']['data_output_dir']
     time = int(LSF_COFNIG['lsf']['nodes_data_update_time'])
-    fname = path_name + "/" + file_name
+    fname = path_name + "/" + queue_name + "_" + file_name
 
     # firstly let's see whether we have the data file and
     # we can read the data from the file
@@ -399,15 +399,19 @@ def get_nodes_info():
         return data
 
     # get the full node list
-    output = run_bqueues()
-    node_list = parse_bqueues_output_to_get_host_list(output)
+    if queue_name == "cryoem_cpu":
+        node_list =  LSF_COFNIG['lsf']['cryoem_cpu_list'].split()
+    else:
+        output = run_bqueues(queue_name)
+        node_list = parse_bqueues_output_to_get_host_list(output)
 
     # initialize the result
     result = form_nodes_infor_list_from_node_names(node_list)
 
     # fill in the gpu information
-    output = run_bhosts_get_gpu_info(node_list)
-    parse_bhost_gpu_infor(output, result)
+    if queue_name != "cryoem_cpu":
+        output = run_bhosts_get_gpu_info(node_list)
+        parse_bhost_gpu_infor(output, result)
 
     # generate cpu information for all nodes
     output = run_lshosts_get_cpu_info(node_list)

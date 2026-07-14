@@ -13,17 +13,49 @@ class Cluster(BaseCluster):
     _config = Config(emgoat.config['lsf'])
     #_job_snapshots_config = Config(emgoat.config['snapshots'])
 
-    def get_nodes_info(self):
-        return self.nodes_list
+    def get_lsf_nodes_info(self, queue):
+        if queue in self.queues:
+            pos = self.queues.index(queue)
+        else:
+            pos= -1
 
-    def get_jobs_info(self):
-        return self.jobs_list
+        # return
+        if pos < 0:
+            raise RuntimeError('failed to get the queue name'.format(queue))
+        return self.nodes_list[pos]
 
-    def get_accounts_info(self):
-        return self.accounts_list
+    def get_lsf_jobs_info(self, queue):
+        if queue in self.queues:
+            pos = self.queues.index(queue)
+        else:
+            pos = -1
 
-    def get_cluster_summary_info(self):
-        return self.summary
+        # return
+        if pos < 0:
+            raise RuntimeError('failed to get the queue name'.format(queue))
+        return self.jobs_list[pos]
+
+    def get_lsf_accounts_info(self, queue):
+        if queue in self.queues:
+            pos = self.queues.index(queue)
+        else:
+            pos = -1
+
+        # return
+        if pos < 0:
+            raise RuntimeError('failed to get the queue name'.format(queue))
+        return self.accounts_list[pos]
+
+    def get_lsf_cluster_summary_info(self, queue):
+        if queue in self.queues:
+            pos = self.queues.index(queue)
+        else:
+            pos = -1
+
+        # return
+        if pos < 0:
+            raise RuntimeError('failed to get the queue name'.format(queue))
+        return self.summary[pos]
 
     def __init__(self):
         """
@@ -33,34 +65,43 @@ class Cluster(BaseCluster):
         # cluster type
         super().__init__()
 
-        # get the nodes information
-        node_list = get_nodes_info()
-        self.nodes_list = self._transform_node_list_infor(node_list)
+        # loop over the queues
+        self.queues = ["cryoem", "cryoem_cpu"]
+        self.nodes_list = []
+        self.jobs_list = []
+        self.accounts_list = []
+        self.summary = []
+        for queue in self.queues:
 
-        # get the jobs information
-        jobs_list = set_job_info()
-        self.jobs_list = self._transform_jobs_list_infor(jobs_list)
+            # get the nodes information
+            node_list = get_nodes_info(queue)
+            new_nodes_list = self._transform_node_list_infor(node_list)
 
-        # set up the account list
-        self.accounts_list = super().form_accounts_infor(self.jobs_list)
+            # get the jobs information
+            jobs_list = set_job_info(queue)
+            self.jobs_list.append(self._transform_jobs_list_infor(jobs_list))
 
-        # update the nodes information with jobs
-        self._update_node_with_job_info()
+            # update nodes data with job data
+            self._update_node_with_job_info(new_nodes_list,jobs_list)
+            self.nodes_list.append(new_nodes_list)
 
-        # finally generate the summary based on the output results
-        self.summary = super().Summary(self.nodes_list, self.jobs_list)
+            # set up the account list
+            self.accounts_list.append(super().form_accounts_infor(self.jobs_list))
 
-    def _update_node_with_job_info(self):
+            # finally generate the summary based on the output results
+            self.summary.append(super().Summary(self.nodes_list, self.jobs_list))
+
+    def _update_node_with_job_info(self, nodes_list, jobs_list):
         """
         this function will further update the node with the job information
         """
-        for node in self.nodes_list:
+        for node in nodes_list:
 
             # get the node name
             node_name = node.name
 
             # get the job landing on the node
-            for job in self.jobs_list:
+            for job in jobs_list:
 
                 # update the node data
                 nodes = job.compute_nodes
@@ -143,13 +184,31 @@ class Cluster(BaseCluster):
         """
         # this is the json result file
         config = self._config
-        json_result = config['json_result_path']
+
+        # generate the gpu results
+        json_result = config['json_gpu_result_path']
+        queue = "cryoem"
 
         # set up the result structure
-        node_list = [x.to_dict() for x in self.get_nodes_info()]
-        jobs_list = [x.to_dict() for x in self.get_jobs_info()]
-        acc_list  = [x.to_dict() for x in self.get_accounts_info() if x.has_any_jobs()]
-        summary   = self.get_cluster_summary_info().to_dict()
+        node_list = [x.to_dict() for x in self.get_lsf_nodes_info(queue)]
+        jobs_list = [x.to_dict() for x in self.get_lsf_jobs_info(queue)]
+        acc_list  = [x.to_dict() for x in self.get_lsf_accounts_info(queue) if x.has_any_jobs()]
+        summary   = self.get_lsf_cluster_summary_info(queue).to_dict()
+        result = {"summary": summary, "nodes": node_list, "accounts": acc_list, "jobs": jobs_list}
+
+        # write it into json file
+        with open(json_result, 'w') as infor:
+            json.dump(result, infor, indent=4)
+
+        # generate the cpu results
+        json_result = config['json_cpu_result_path']
+        queue = "cryoem_cpu"
+
+        # set up the result structure
+        node_list = [x.to_dict() for x in self.get_lsf_nodes_info(queue)]
+        jobs_list = [x.to_dict() for x in self.get_lsf_jobs_info(queue)]
+        acc_list  = [x.to_dict() for x in self.get_lsf_accounts_info(queue) if x.has_any_jobs()]
+        summary   = self.get_lsf_cluster_summary_info(queue).to_dict()
         result = {"summary": summary, "nodes": node_list, "accounts": acc_list, "jobs": jobs_list}
 
         # write it into json file

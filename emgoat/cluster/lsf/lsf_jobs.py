@@ -12,7 +12,7 @@ from .functions import *
 #
 LSF_COFNIG = get_config()
 
-def run_bjobs_get_alljobs():
+def run_bjobs_get_alljobs(queue_name: str):
     """
     run the bjobs command to get all of job information.
     command line arguments format is derived from the config
@@ -20,7 +20,7 @@ def run_bjobs_get_alljobs():
     :return: the raw output for the bjobs, the output is in json format
     """
     args = LSF_COFNIG['lsf']['bjobs'].split()
-    other_args = ["-q", LSF_COFNIG['lsf']['queue_name'], "-o", LSF_COFNIG['lsf']['bjobs_output_format']]
+    other_args = ["-q", queue_name, "-o", LSF_COFNIG['lsf']['bjobs_output_format']]
     args = args + other_args
     return run_command(args)
 
@@ -108,7 +108,7 @@ def parse_bjobs_output_for_alljobs(output):
     # now return
     return job_list
 
-def set_job_info():
+def set_job_info(queue_name):
     """
     this is the driver function for the lsf_jobs. It will return the job list, each job
     is a dict as described in parse_bjobs_output_for_alljobs
@@ -118,7 +118,7 @@ def set_job_info():
     # get the data file name
     file_name = LSF_COFNIG['lsf']['jobs_data_file_name']
     path_name = LSF_COFNIG['lsf']['data_output_dir']
-    fname = path_name + "/" + file_name
+    fname = path_name + "/" + queue_name+ "_" + file_name
     time = int(LSF_COFNIG['lsf']['jobs_data_update_time'])
 
     # whether we have the file
