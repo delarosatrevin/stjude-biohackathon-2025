@@ -57,6 +57,18 @@ class Cluster(BaseCluster):
             raise RuntimeError('failed to get the queue name'.format(queue))
         return self.summary[pos]
 
+    def get_nodes_info(self):
+        return self.nodes_list[0]
+
+    def get_jobs_info(self):
+        return self.jobs_list[0]
+
+    def get_accounts_info(self):
+        return self.accounts_list[0]
+
+    def get_cluster_summary_info(self):
+        return self.summary[0]
+
     def __init__(self):
         """
         initialization of lsf cluster
@@ -79,17 +91,18 @@ class Cluster(BaseCluster):
 
             # get the jobs information
             jobs_list = set_job_info(queue)
-            self.jobs_list.append(self._transform_jobs_list_infor(jobs_list))
+            new_jobs_list = self._transform_jobs_list_infor(jobs_list)
+            self.jobs_list.append(new_jobs_list)
 
             # update nodes data with job data
-            self._update_node_with_job_info(new_nodes_list,jobs_list)
+            self._update_node_with_job_info(new_nodes_list,new_jobs_list)
             self.nodes_list.append(new_nodes_list)
 
             # set up the account list
-            self.accounts_list.append(super().form_accounts_infor(self.jobs_list))
+            self.accounts_list.append(super().form_accounts_infor(new_jobs_list))
 
             # finally generate the summary based on the output results
-            self.summary.append(super().Summary(self.nodes_list, self.jobs_list))
+            self.summary.append(super().Summary(new_nodes_list, new_jobs_list))
 
     def _update_node_with_job_info(self, nodes_list, jobs_list):
         """

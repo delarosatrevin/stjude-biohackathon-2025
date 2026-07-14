@@ -127,7 +127,7 @@ def set_job_info(queue_name):
         return data
 
     # now let's generate the file
-    output = run_bjobs_get_alljobs()
+    output = run_bjobs_get_alljobs(queue_name)
     jobs_list = parse_bjobs_output_for_alljobs(output)
 
     # save the data
