@@ -314,6 +314,76 @@ def need_newer_data_file(fname, time):
     else:
         return True
 
+def get_lsf_job_mem_infor_in_mb(ori_mem_request: str):
+    """
+    this is to get the memory information from the input memory value
+    from the LSF job
+
+    the value returned will be an integer in mb unit
+    """
+    #
+    # sometimes we may see the string as empty
+    # this means the value here is un-determined
+    # usually the job will use system default value, we will determine
+    # the memory in other places
+    #
+    if not ori_mem_request.lower().strip():
+        mem = -1
+    else:
+        s = ori_mem_request.lower().split()
+
+        # memory always have unit information
+        # however we check the length here
+        # here the unit could be attached together with the number
+        if len(s) == 1:
+            val = float(re.search(r'\d+(\.\d+)?', ori_mem_request).group())
+            if ori_mem_request.find("g") >=0 or ori_mem_request.find("G") >=0:
+                mem = val*1024
+            elif ori_mem_request.find("M") >=0 or ori_mem_request.find("m") >=0:
+                mem = val
+            elif ori_mem_request.find("T") >=0 or ori_mem_request.find("t") >=0:
+                mem = val * 1024 * 1024
+            else:
+                raise RuntimeError("Invalid memory requested passed in LSF job: {}".format(ori_mem_request))
+        else:
+
+            # sometimes the value is not an integer, if could be float number
+            # for float number we will convert it into integer at last
+            if is_str_float(s[0]):
+                val = float(s[0])
+            elif is_str_integer(s[0]):
+                val = convert_str_to_integer(s[0])
+            else:
+                raise RuntimeError("We can not process the value in the input data of "
+                               "get_lsf_job_mem_infor_in_mb, neither integer nor float: {}".format(ori_mem_request))
+            unit = s[1]
+
+            # sometimes the unit is a single character
+            if len(unit) == 1:
+                if unit == "g":
+                    mem = val * 1024
+                elif unit == "t":
+                    mem = val * 1024 * 1024
+                elif unit == "m":
+                    mem = val
+                else:
+                    raise RuntimeError("Invalid memory requested passed in LSF job: {}".format(ori_mem_request))
+            else:
+                if unit.find("gb") >= 0:
+                    mem = val * 1024
+                elif unit.find("tb") >= 0:
+                    mem = val * 1024 * 1024
+                elif unit.find("mb") >= 0:
+                    mem = val
+                else:
+                    raise RuntimeError("Invalid memory requested passed in LSF job: {}".format(ori_mem_request))
+
+    # check whether mem is in float type
+    if isinstance(mem, float):
+        return convert_float_to_integer(str(mem))
+
+    # final return
+    return mem
 
 
 class Config:
