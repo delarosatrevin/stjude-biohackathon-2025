@@ -66,14 +66,16 @@ class Cluster(ABC):
                 if mem_used > 0:
                     self.memory_in_use = mem_used
 
-        def update_jobs_infor(self, gpus_in_use, cores_in_use, memory_in_use):
+        def update_jobs_infor(self, gpus_in_use, cores_in_use):
             """
             update the corresponding usage data from one job
             """
             self.njobs += 1
             self.gpus_in_use += gpus_in_use
             self.cores_in_use += cores_in_use
-            self.memory_in_use += memory_in_use
+
+        def update_update_memory_in_use(self, value):
+            self.memory_in_use = value
 
         def to_dict(self):
             """
