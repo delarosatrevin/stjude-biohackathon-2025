@@ -74,7 +74,7 @@ class Cluster(ABC):
             self.gpus_in_use += gpus_in_use
             self.cores_in_use += cores_in_use
 
-        def update_update_memory_in_use(self, value):
+        def update_memory_in_use(self, value):
             self.memory_in_use = value
 
         def to_dict(self):
